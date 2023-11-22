@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	_ "embed"
+	"github.com/gomarkdown/markdown/ast"
 	"github.com/monopole/mdparse/internal/file"
 	"github.com/spf13/cobra"
 	"os"
@@ -11,15 +12,12 @@ import (
 	"github.com/gomarkdown/markdown/parser"
 )
 
+//go:embed hoser.md
+var mds string
+
 const (
 	version   = "v0.2.2"
 	shortHelp = "Clone or rebase the repositories specified in the input file."
-	mds       = `# header
-
-Sample text.
-
-[link](http://example.com)
-`
 )
 
 func newCommand() *cobra.Command {
@@ -42,9 +40,13 @@ func newCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 			md := []byte(mds)
-			html := mdToHTML(md)
 
-			_, err = fmt.Printf("--- Markdown:\n%s\n\n--- HTML:\n%s\n", md, html)
+			extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+			p := parser.NewWithExtensions(extensions)
+			doc := p.Parse(md)
+
+			ast.PrintWithPrefix(os.Stdout, doc, "  ")
+			//	_, err = fmt.Printf("--- Markdown:\n%s\n\n--- HTML:\n%s\n", md, renderAsHtml(doc))
 			return
 		},
 		SilenceUsage: true,
@@ -58,16 +60,9 @@ func main() {
 	os.Exit(0)
 }
 
-func mdToHTML(md []byte) []byte {
-	// create markdown parser with extensions
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
-	p := parser.NewWithExtensions(extensions)
-	doc := p.Parse(md)
-
-	// create HTML renderer with extensions
+func renderAsHtml(doc ast.Node) []byte {
 	htmlFlags := html.CommonFlags | html.HrefTargetBlank
 	opts := html.RendererOptions{Flags: htmlFlags}
 	renderer := html.NewRenderer(opts)
-
 	return markdown.Render(doc, renderer)
 }
