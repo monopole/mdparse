@@ -6,10 +6,6 @@ import (
 	"github.com/monopole/mdparse/internal/file"
 	"github.com/spf13/cobra"
 	"os"
-
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
 )
 
 //go:embed hoser.md
@@ -41,12 +37,13 @@ func newCommand() *cobra.Command {
 
 			md := []byte(mds)
 
-			extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
-			p := parser.NewWithExtensions(extensions)
+			p := newMarkdownParser()
 			doc := p.Parse(md)
 
 			ast.PrintWithPrefix(os.Stdout, doc, "  ")
-			//	_, err = fmt.Printf("--- Markdown:\n%s\n\n--- HTML:\n%s\n", md, renderAsHtml(doc))
+			//myWalk(doc)
+			//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
+			//_, err = fmt.Printf("--- HTML:\n%s\n", renderAsHtml(doc))
 			return
 		},
 		SilenceUsage: true,
@@ -58,11 +55,4 @@ func main() {
 		os.Exit(1)
 	}
 	os.Exit(0)
-}
-
-func renderAsHtml(doc ast.Node) []byte {
-	htmlFlags := html.CommonFlags | html.HrefTargetBlank
-	opts := html.RendererOptions{Flags: htmlFlags}
-	renderer := html.NewRenderer(opts)
-	return markdown.Render(doc, renderer)
 }
