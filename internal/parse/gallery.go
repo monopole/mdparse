@@ -1,4 +1,4 @@
-package main
+package parse
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/gomarkdown/markdown/ast"
-	"github.com/gomarkdown/markdown/parser"
 )
 
 type Gallery struct {
@@ -16,7 +15,7 @@ type Gallery struct {
 
 var gallery = []byte(":gallery\n")
 
-func parseGallery(data []byte) (ast.Node, []byte, int) {
+func attemptToParseGallery(data []byte) (ast.Node, []byte, int) {
 	if !bytes.HasPrefix(data, gallery) {
 		return nil, nil, 0
 	}
@@ -35,24 +34,4 @@ func parseGallery(data []byte) (ast.Node, []byte, int) {
 		ImageURLS: parts,
 	}
 	return res, nil, end
-}
-
-func parserHook(data []byte) (ast.Node, []byte, int) {
-	if node, d, n := parseGallery(data); node != nil {
-		return node, d, n
-	}
-	return nil, nil, 0
-}
-
-const doMyStuff = false
-
-func newMarkdownParser() *parser.Parser {
-	extensions := parser.CommonExtensions |
-		parser.AutoHeadingIDs |
-		parser.NoEmptyLineBeforeBlock
-	p := parser.NewWithExtensions(extensions)
-	if doMyStuff {
-		p.Opts.ParserHook = parserHook
-	}
-	return p
 }

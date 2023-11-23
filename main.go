@@ -2,18 +2,21 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/monopole/mdparse/internal/file"
+	"github.com/monopole/mdparse/internal/parse"
 	"github.com/spf13/cobra"
 	"os"
 )
 
-//go:embed hoser.md
+//go:embed small.md
 var mds string
 
 const (
 	version   = "v0.2.2"
 	shortHelp = "Clone or rebase the repositories specified in the input file."
+	doMyStuff = true
 )
 
 func newCommand() *cobra.Command {
@@ -37,13 +40,13 @@ func newCommand() *cobra.Command {
 
 			md := []byte(mds)
 
-			p := newMarkdownParser()
+			p := parse.NewMarkdownParser(doMyStuff)
 			doc := p.Parse(md)
 
 			ast.PrintWithPrefix(os.Stdout, doc, "  ")
 			//myWalk(doc)
 			//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
-			//_, err = fmt.Printf("--- HTML:\n%s\n", renderAsHtml(doc))
+			_, err = fmt.Printf("--- HTML:\n%s\n", renderAsHtml(doc))
 			return
 		},
 		SilenceUsage: true,
