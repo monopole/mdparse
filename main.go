@@ -6,6 +6,7 @@ import (
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/monopole/mdparse/internal/file"
 	"github.com/monopole/mdparse/internal/parse"
+	"github.com/monopole/mdparse/internal/render"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -46,7 +47,7 @@ func newCommand() *cobra.Command {
 			ast.PrintWithPrefix(os.Stdout, doc, "  ")
 			//myWalk(doc)
 			//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
-			_, err = fmt.Printf("--- HTML:\n%s\n", renderAsHtml(doc))
+			_, err = fmt.Printf("--- HTML:\n%s\n", render.RenderAsHtml(doc, doMyStuff))
 			return
 		},
 		SilenceUsage: true,

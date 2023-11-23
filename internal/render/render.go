@@ -1,4 +1,4 @@
-package main
+package render
 
 import (
 	"github.com/gomarkdown/markdown"
@@ -8,12 +8,10 @@ import (
 	"io"
 )
 
-func renderAsHtml(doc ast.Node) []byte {
-
+func RenderAsHtml(doc ast.Node, doMyStuff bool) []byte {
 	opts := html.RendererOptions{
 		Flags: html.CommonFlags | html.HrefTargetBlank,
 	}
-
 	if doMyStuff {
 		opts.RenderNodeHook = myRenderHook
 	}

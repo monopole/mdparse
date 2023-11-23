@@ -13,9 +13,11 @@ type Gallery struct {
 	ImageURLS []string
 }
 
+var _ ast.Node = &Gallery{}
+
 var gallery = []byte(":gallery\n")
 
-func attemptToParseGallery(data []byte) (ast.Node, []byte, int) {
+func attemptToParseGallery(data []byte) (*Gallery, []byte, int) {
 	if !bytes.HasPrefix(data, gallery) {
 		return nil, nil, 0
 	}
@@ -28,10 +30,7 @@ func attemptToParseGallery(data []byte) (ast.Node, []byte, int) {
 		return nil, data, 0
 	}
 	end = end + i
-	lines := string(data[i:end])
-	parts := strings.Split(lines, "\n")
-	res := &Gallery{
-		ImageURLS: parts,
-	}
-	return res, nil, end
+	return &Gallery{
+		ImageURLS: strings.Split(string(data[i:end]), "\n"),
+	}, nil, end
 }
