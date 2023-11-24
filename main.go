@@ -3,12 +3,13 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/gomarkdown/markdown/ast"
+	gomAst "github.com/gomarkdown/markdown/ast"
 	"github.com/monopole/mdparse/internal/file"
 	"github.com/monopole/mdparse/internal/parse"
 	"github.com/monopole/mdparse/internal/render"
 	"github.com/spf13/cobra"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
@@ -55,7 +56,7 @@ func doItWithGoMarkDown(cmd *cobra.Command, args []string) (err error) {
 	p := parse.NewMarkdownParser(doMyStuff)
 	doc := p.Parse(md)
 
-	ast.PrintWithPrefix(os.Stdout, doc, "  ")
+	gomAst.PrintWithPrefix(os.Stdout, doc, "  ")
 	//myWalk(doc)
 	//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
 	_, err = fmt.Printf("--- HTML:\n%s\n", render.RenderAsHtml(doc, doMyStuff))
@@ -76,10 +77,11 @@ func doItWithGoldMark(cmd *cobra.Command, args []string) (err error) {
 
 	//var b bytes.Buffer
 	md := []byte(mds)
-
-	doc := markdown.Parser().Parse(text.NewReader(md))
+	var doc ast.Node
+	doc = markdown.Parser().Parse(text.NewReader(md))
 	// doc.Meta()["footnote-prefix"] = getPrefix(path)
 	fmt.Printf("%T %+v\n", doc, doc)
+	doc.Dump(md, 2) // why?  i'm reparsing the markdown.  using what parser?
 	//err = markdown.Renderer().Render(&b, md, doc)
 	//fmt.Println(b.String())
 	return
