@@ -1,4 +1,5 @@
 # header
+[google]: https://www.google.com
 
 Sample text.
 
@@ -27,3 +28,7 @@ here's a gallery
 :gallery
 /img/image-1.png
 /img/image-2.png
+
+
+Maybe search on [google].
+
