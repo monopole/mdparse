@@ -8,7 +8,8 @@ import (
 func NewMarkdownParser(doMyStuff bool) *parser.Parser {
 	p := parser.NewWithExtensions(parser.CommonExtensions |
 		parser.AutoHeadingIDs |
-		parser.NoEmptyLineBeforeBlock)
+		parser.NoEmptyLineBeforeBlock |
+		parser.Attributes)
 	if doMyStuff {
 		p.Opts.ParserHook = parserHook
 	}

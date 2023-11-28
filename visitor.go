@@ -23,7 +23,11 @@ func (v *nodeVisitor) Visit(n ast.Node, entering bool) ast.WalkStatus {
 	// ast.Print recurses its argument, instead of just visiting
 	// only the argument, so it's not what you want.
 	// ast.Print(os.Stdout, n)
-	fmt.Println(nodeType(n))
+	leafLiteral := ""
+	if n.AsLeaf() != nil {
+		leafLiteral = string(n.AsLeaf().Literal)
+	}
+	fmt.Printf("%s %s \n", nodeType(n), leafLiteral)
 	return ast.GoToNext
 }
 

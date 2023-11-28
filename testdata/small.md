@@ -9,8 +9,18 @@ Some text before a code block.
 a := b
 ```
 
+The comments between the code blocks.
+
+{#id3 .myclass fontsize="tiny"}
+```
+c := d
+```
+
 Some text after the code block.
 Hope you liked it.
+
+{#id4 .myotherclass fontsize="huge"}
+## Another header
 
 Some stuff in the middle.
 
