@@ -4,7 +4,7 @@ import (
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
-	"github.com/monopole/mdparse/internal/parse"
+	"github.com/monopole/mdparse/internal/parseblue"
 	"io"
 )
 
@@ -26,7 +26,7 @@ func myRenderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bo
 			io.WriteString(w, "code_replacement\n")
 		}
 		return ast.GoToNext, true
-	case *parse.Gallery:
+	case *parseblue.Gallery:
 		if entering {
 			io.WriteString(w, "\n<gallery></gallery>\n\n")
 		}
