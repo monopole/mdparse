@@ -1,11 +1,13 @@
-package parseblue
+package useblue
 
 import (
 	"fmt"
+	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
+	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/monopole/mdparse/internal/ifc"
-	"github.com/monopole/mdparse/internal/render"
+	"io"
 	"os"
 	"strings"
 )
@@ -26,11 +28,17 @@ func (gm *gomark) Parse(data []byte) error {
 }
 
 func (gm *gomark) Render() (string, error) {
-	res := render.RenderAsHtml(gm.doc, gm.doMyStuff)
-	return string(res), nil
+	opts := html.RendererOptions{
+		Flags: html.CommonFlags | html.HrefTargetBlank,
+	}
+	if gm.doMyStuff {
+		opts.RenderNodeHook = myRenderHook
+	}
+	renderer := html.NewRenderer(opts)
+	return string(markdown.Render(gm.doc, renderer)), nil
 }
 
-func NewMarkdownParser(doMyStuff bool) ifc.Marker {
+func NewMarker(doMyStuff bool) ifc.Marker {
 	p := parser.NewWithExtensions(parser.CommonExtensions |
 		parser.AutoHeadingIDs |
 		parser.NoEmptyLineBeforeBlock |
@@ -91,4 +99,21 @@ func nodeType(node ast.Node) string {
 		return s[idx+1:]
 	}
 	return s
+}
+
+func myRenderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool) {
+	switch node.(type) {
+	case *ast.CodeBlock:
+		if entering {
+			io.WriteString(w, "code_replacement\n")
+		}
+		return ast.GoToNext, true
+	case *Gallery:
+		if entering {
+			_, _ = io.WriteString(w, "\n<gallery></gallery>\n\n")
+		}
+		return ast.GoToNext, true
+	default:
+		return ast.GoToNext, false
+	}
 }

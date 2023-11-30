@@ -1,4 +1,4 @@
-package parsegold
+package usegold
 
 import (
 	bytes2 "bytes"
@@ -13,12 +13,13 @@ import (
 )
 
 type gomark struct {
-	p    goldmark.Markdown
-	data []byte
-	doc  ast.Node
+	doMyStuff bool
+	p         goldmark.Markdown
+	rawData   []byte
+	doc       ast.Node
 }
 
-func NewMarkdownParser(doMyStuff bool) ifc.Marker {
+func NewMarker(doMyStuff bool) ifc.Marker {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithParserOptions(
@@ -30,19 +31,16 @@ func NewMarkdownParser(doMyStuff bool) ifc.Marker {
 			html.WithUnsafe(),
 		),
 	)
-	return &gomark{p: markdown}
-
+	return &gomark{doMyStuff: doMyStuff, p: markdown}
 }
 
 func (gm *gomark) Parse(bytes []byte) error {
-	gm.data = bytes
+	gm.rawData = bytes
 
-	var doc ast.Node
-
-	doc = gm.p.Parser().Parse(text.NewReader(bytes))
+	gm.doc = gm.p.Parser().Parse(text.NewReader(bytes))
 	// doc.Meta()["footnote-prefix"] = getPrefix(path)
-	fmt.Printf("%T %+v\n", doc, doc)
-	doc.Dump(bytes, 0)
+	fmt.Printf("%T %+v\n", gm.doc, gm.doc)
+	gm.doc.Dump(bytes, 0)
 	// Dump and Render need the original source text because the AST doesn't
 	// hold the original text - it just has byte array offsets.
 	// Every Node is a BaseBlock, and each BaseBlock has a ptr to the lines in the
@@ -55,6 +53,6 @@ func (gm *gomark) Parse(bytes []byte) error {
 
 func (gm *gomark) Render() (string, error) {
 	var b bytes2.Buffer
-	err := gm.p.Renderer().Render(&b, gm.data, gm.doc)
+	err := gm.p.Renderer().Render(&b, gm.rawData, gm.doc)
 	return b.String(), err
 }

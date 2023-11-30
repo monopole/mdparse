@@ -1,4 +1,4 @@
-package parseblue
+package useblue
 
 import (
 	"bytes"
