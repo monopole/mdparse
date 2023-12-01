@@ -4,16 +4,22 @@
 
 Some text before a code block.
 
-<!-- comment before codeblock -->
+<!-- @one  @two  @three -->
 ```
-a := b
+a := one
 ```
 
 The comments between the code blocks.
 
-{#id3 .myclass fontsize="tiny"}
 ```
-c := d
+c := two
+```
+
+whatever
+
+<!-- @four    @five    @six -->
+```
+c := three
 ```
 
 Some text after the code block.

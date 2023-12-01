@@ -27,6 +27,7 @@ const (
 // and rendering an AST, so that we don't have to implement,
 // say, mermaid handling.
 //
+// Goal is to wrap every code
 // The trick with either implementation is to
 //   - write a special 'code block comment' parser, creating a new AST entry
 //   - modify the AST tree to create special, runnable, identifiable, codeblocks with
@@ -43,7 +44,6 @@ func main() {
 }
 
 func newCommand() *cobra.Command {
-	//var body []byte
 	return &cobra.Command{
 		Use:   "mdparse {fileName}",
 		Short: shortHelp,
@@ -51,15 +51,6 @@ func newCommand() *cobra.Command {
 		Example: "  mdparse " + file.DefaultConfigFileName() + `
 
 `,
-		//Args: func(_ *cobra.Command, args []string) (err error) {
-		//	filePath, err := file.GetFilePath(args)
-		//	body, err = os.ReadFile(string(filePath))
-		//	if err != nil {
-		//		return fmt.Errorf("unable to read config file %q", filePath)
-		//	}
-		//	return err
-		//},
-
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var m ifc.Marker
 			if useGoldmark := true; useGoldmark {
@@ -99,12 +90,15 @@ func newCommand() *cobra.Command {
 			if err = m.Parse([]byte(mds)); err != nil {
 				return
 			}
+			//m.Dump()
 			var s string
 			s, err = m.Render()
 			if err != nil {
 				return
 			}
-			fmt.Println(s)
+			if printIt := false; printIt {
+				fmt.Println(s)
+			}
 			return
 		},
 

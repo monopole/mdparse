@@ -21,7 +21,6 @@ type gomark struct {
 func (gm *gomark) Parse(data []byte) error {
 	gm.doc = gm.p.Parse(data)
 
-	ast.PrintWithPrefix(os.Stdout, gm.doc, "  ")
 	myWalk(gm.doc)
 	//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
 	return nil
@@ -36,6 +35,10 @@ func (gm *gomark) Render() (string, error) {
 	}
 	renderer := html.NewRenderer(opts)
 	return string(markdown.Render(gm.doc, renderer)), nil
+}
+
+func (gm *gomark) Dump() {
+	ast.PrintWithPrefix(os.Stdout, gm.doc, "  ")
 }
 
 func NewMarker(doMyStuff bool) ifc.Marker {
