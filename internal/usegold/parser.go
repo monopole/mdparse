@@ -41,15 +41,16 @@ func (gm *gomark) Parse(bytes []byte) error {
 
 	gm.doc = gm.p.Parser().Parse(text.NewReader(bytes))
 	// doc.Meta()["footnote-prefix"] = getPrefix(path)
-	fmt.Printf("%T %+v\n", gm.doc, gm.doc)
-	// Dump and Render need the original source text because the AST doesn't
-	// hold the original text - it just has byte array offsets.
+
+	// The AST doesn't hold the original text - it just has byte array offsets.
 	// Every Node is a BaseBlock, and each BaseBlock has a ptr to the lines in the
 	// source text that make it, and each line is a Segment, and each Segment has
 	// a Start and Stop integer index meant for use with a byte array.
 	// I confirmed this by sending some different document in.
 
-	return gm.WalkIt()
+	w := Walker{}
+	// This can walk and accumulate more than one doc!
+	return w.WalkDoc(gm.doc, gm.rawData)
 }
 
 func (gm *gomark) Dump() {
@@ -62,20 +63,36 @@ func (gm *gomark) Render() (string, error) {
 	return b.String(), err
 }
 
-func (gm *gomark) WalkIt() error {
-	gm.depth = 0
-	return ast.Walk(gm.doc, gm.myWalk)
+type DocHolder struct {
+	doc     ast.Node
+	content []byte
+}
+
+type Walker struct {
+	codeCount int
+	depth     int
+	docs      []DocHolder
+}
+
+func (w *Walker) WalkDoc(doc ast.Node, content []byte) error {
+	w.docs = append(w.docs, DocHolder{doc: doc, content: content})
+	w.depth = 0
+	return ast.Walk(doc, w.myWalk)
 }
 
 const blanks = "                      "
 
-func (gm *gomark) myWalk(n ast.Node, entering bool) (ast.WalkStatus, error) {
+func (w *Walker) currentContent() []byte {
+	return w.docs[len(w.docs)-1].content
+}
+
+func (w *Walker) myWalk(n ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
-		gm.depth--
+		w.depth--
 		return ast.WalkContinue, nil
 	}
-	gm.depth++
-	s := string(n.Text(gm.rawData))
+	w.depth++
+	s := string(n.Text(w.currentContent()))
 	if len(s) > 30 {
 		s = s[:30] + "..."
 	}
@@ -83,9 +100,9 @@ func (gm *gomark) myWalk(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		prev := n.PreviousSibling()
 		if prev != nil && prev.Kind() == ast.KindHTMLBlock {
 			htmlBlock, ok := prev.(*ast.HTMLBlock)
-			var labels []string
 			if ok {
-				labels = recoverLabels(rawText(htmlBlock, gm.rawData))
+				fmt.Print(rawText(htmlBlock, w.currentContent()))
+				labels := parseLabels(commentBody(rawText(htmlBlock, w.currentContent())))
 				for i := range labels {
 					fmt.Printf("  %q\n", labels[i])
 					n.SetAttributeString(labels[i], "")
@@ -93,7 +110,7 @@ func (gm *gomark) myWalk(n ast.Node, entering bool) (ast.WalkStatus, error) {
 			}
 		}
 		fmt.Println("fencedCodeBlock")
-		fmt.Printf("  %q\n", rawText(n, gm.rawData))
+		fmt.Printf("  %q\n", rawText(n, w.currentContent()))
 	}
 	// fmt.Printf("%s k=%30s t=%d %s \n", blanks[:gm.depth], n.Kind(), n.Type(), s)
 	return ast.WalkContinue, nil
@@ -113,6 +130,7 @@ func commentBody(s string) string {
 		begin = "<!--"
 		end   = "-->"
 	)
+	s = strings.TrimSpace(s)
 	if !strings.HasPrefix(s, begin) {
 		return ""
 	}
@@ -122,17 +140,17 @@ func commentBody(s string) string {
 	return s[len(begin) : len(s)-len(end)]
 }
 
-func recoverLabels(s string) (result []string) {
-	if !strings.HasPrefix(s, "<!--") {
-		// Ignore the HTML if it isn't a comment.
-		//
-		return
-	}
-	fmt.Println(s)
+const labelPrefixChar = uint8('@')
+
+func parseLabels(s string) (result []string) {
 	items := strings.Split(s, " ")
 	for _, word := range items {
-		if len(word) > 0 && word[0] == uint8('@') {
-			result = append(result, word[1:])
+		i := 0
+		for i < len(word) && word[i] == labelPrefixChar {
+			i++
+		}
+		if i > 0 && i < len(word) && word[i-1] == labelPrefixChar {
+			result = append(result, word[i:])
 		}
 	}
 	return
