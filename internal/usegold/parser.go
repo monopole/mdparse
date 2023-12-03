@@ -1,7 +1,7 @@
 package usegold
 
 import (
-	bytes2 "bytes"
+	"bytes"
 	"fmt"
 	"github.com/monopole/mdparse/internal/ifc"
 	"github.com/yuin/goldmark"
@@ -36,10 +36,10 @@ func NewMarker(doMyStuff bool) ifc.Marker {
 	return &gomark{doMyStuff: doMyStuff, p: markdown}
 }
 
-func (gm *gomark) Parse(bytes []byte) error {
-	gm.rawData = bytes
+func (gm *gomark) Parse(rawData []byte) error {
+	gm.rawData = rawData
 
-	gm.doc = gm.p.Parser().Parse(text.NewReader(bytes))
+	gm.doc = gm.p.Parser().Parse(text.NewReader(rawData))
 	// doc.Meta()["footnote-prefix"] = getPrefix(path)
 
 	// The AST doesn't hold the original text - it just has byte array offsets.
@@ -58,22 +58,29 @@ func (gm *gomark) Dump() {
 }
 
 func (gm *gomark) Render() (string, error) {
-	var b bytes2.Buffer
+	var b bytes.Buffer
 	err := gm.p.Renderer().Render(&b, gm.rawData, gm.doc)
 	return b.String(), err
 }
 
+// DocHolder associates an AST tree with the raw content that
+// was parsed to form the tree.
 type DocHolder struct {
 	doc     ast.Node
 	content []byte
 }
 
+// Walker walks documents, accumulating them as it goes.
 type Walker struct {
-	codeCount int
-	depth     int
-	docs      []DocHolder
+	// Used to assign a unique ID to each code block across all the documents.
+	codeBlockCounter int
+	// depth is for printing
+	depth int
+	// All the documents that this Walker has walked.
+	docs []DocHolder
 }
 
+// WalkDoc walks and accumulates a parsed document.
 func (w *Walker) WalkDoc(doc ast.Node, content []byte) error {
 	w.docs = append(w.docs, DocHolder{doc: doc, content: content})
 	w.depth = 0
@@ -82,41 +89,46 @@ func (w *Walker) WalkDoc(doc ast.Node, content []byte) error {
 
 const blanks = "                      "
 
-func (w *Walker) currentContent() []byte {
-	return w.docs[len(w.docs)-1].content
-}
-
 func (w *Walker) myWalk(n ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
 		w.depth--
 		return ast.WalkContinue, nil
 	}
 	w.depth++
-	s := string(n.Text(w.currentContent()))
-	if len(s) > 30 {
-		s = s[:30] + "..."
-	}
 	if n.Kind() == ast.KindFencedCodeBlock {
-		prev := n.PreviousSibling()
-		if prev != nil && prev.Kind() == ast.KindHTMLBlock {
-			htmlBlock, ok := prev.(*ast.HTMLBlock)
-			if ok {
-				fmt.Print(rawText(htmlBlock, w.currentContent()))
-				labels := parseLabels(commentBody(rawText(htmlBlock, w.currentContent())))
-				for i := range labels {
-					fmt.Printf("  %q\n", labels[i])
-					n.SetAttributeString(labels[i], "")
-				}
+		w.codeBlockCounter++
+		fmt.Printf("fencedCodeBlock %d\n", w.codeBlockCounter)
+		labels := []string{fmt.Sprintf("fcb_%03d", w.codeBlockCounter)}
+		if prev := n.PreviousSibling(); prev != nil && prev.Kind() == ast.KindHTMLBlock {
+			if b, ok := prev.(*ast.HTMLBlock); ok {
+				// We have an HTML block.  If it's a comment, try to extract labels.
+				labels = append(labels, parseLabels(commentBody(w.nodeText(b)))...)
 			}
 		}
-		fmt.Println("fencedCodeBlock")
-		fmt.Printf("  %q\n", rawText(n, w.currentContent()))
+		for i := range labels {
+			fmt.Printf("  %q\n", labels[i])
+			// TODO: instead use a fixed key, and store the array as the value?
+			n.SetAttributeString(labels[i], labels[i])
+		}
+		fmt.Printf("     %q\n", w.nodeText(n))
 	}
+	//s := string(n.Text(w.currentContent()))
+	//if len(s) > 30 {
+	//	s = s[:30] + "..."
+	//}
 	// fmt.Printf("%s k=%30s t=%d %s \n", blanks[:gm.depth], n.Kind(), n.Type(), s)
 	return ast.WalkContinue, nil
 }
 
-func rawText(n ast.Node, raw []byte) string {
+func (w *Walker) nodeText(n ast.Node) string {
+	return gatherText(n, w.currentContent())
+}
+
+func (w *Walker) currentContent() []byte {
+	return w.docs[len(w.docs)-1].content
+}
+
+func gatherText(n ast.Node, raw []byte) string {
 	var buff strings.Builder
 	for i := 0; i < n.Lines().Len(); i++ {
 		s := n.Lines().At(i)
