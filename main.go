@@ -90,7 +90,7 @@ func newCommand() *cobra.Command {
 			if err = m.Parse([]byte(mds)); err != nil {
 				return
 			}
-			//m.Dump()
+			m.Dump()
 			var s string
 			s, err = m.Render()
 			if err != nil {

@@ -11,15 +11,28 @@ a := one
 
 The comments between the code blocks.
 
-```
+```bash
 c := two
 ```
 
 whatever
 
 <!-- @four    @five    @six -->
-```
+```go
 c := three
+```
+
+hoserface
+
+<!--  -->
+```
+c := four
+```
+
+<!-- @blimp -->
+```
+c := five
+d := six
 ```
 
 Some text after the code block.

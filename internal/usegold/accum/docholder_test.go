@@ -1,4 +1,4 @@
-package usegold
+package accum
 
 import (
 	"slices"
