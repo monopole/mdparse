@@ -1,7 +1,9 @@
 package ifc
 
+import "github.com/monopole/mdrip/base"
+
 type Marker interface {
-	Parse(bytes []byte) error
+	Load(set *base.DataSet) error
 	Render() (string, error)
 	Dump()
 }

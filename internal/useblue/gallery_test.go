@@ -35,12 +35,10 @@ and more stuff`
 			assert.Equal(t, tc.expectedSize, s)
 			assert.NotNil(t, n)
 
-			g, ok := n.(*Gallery)
-			assert.True(t, ok)
-			assert.Equal(t, 2, len(g.ImageURLS))
+			assert.Equal(t, 2, len(n.ImageURLS))
 
-			assert.Equal(t, "/img/image-0.png", g.ImageURLS[0])
-			assert.Equal(t, "/img/image-1.png", g.ImageURLS[1])
+			assert.Equal(t, "/img/image-0.png", n.ImageURLS[0])
+			assert.Equal(t, "/img/image-1.png", n.ImageURLS[1])
 		})
 	}
 }

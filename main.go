@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"github.com/monopole/mdrip/base"
 	"os"
 
 	"github.com/monopole/mdparse/internal/file"
@@ -12,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//go:embed testdata/small.md
+//go:embed internal/usegold/model/testdata/small.md
 var mds string
 
 const (
@@ -52,6 +53,12 @@ func newCommand() *cobra.Command {
 
 `,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			var dataSet *base.DataSet
+			dataSet, err = base.NewDataSet(args)
+			if err != nil {
+				return
+			}
+
 			var m ifc.Marker
 			if useGoldmark := true; useGoldmark {
 				// https://github.com/yuin/goldmark
@@ -87,7 +94,7 @@ func newCommand() *cobra.Command {
 				//   - It has zero official releases.
 				m = useblue.NewMarker(doMyStuff)
 			}
-			if err = m.Parse([]byte(mds)); err != nil {
+			if err = m.Load(dataSet); err != nil {
 				return
 			}
 			m.Dump()

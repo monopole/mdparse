@@ -7,6 +7,7 @@ import (
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/monopole/mdparse/internal/ifc"
+	"github.com/monopole/mdrip/base"
 	"io"
 	"os"
 	"strings"
@@ -18,8 +19,9 @@ type gomark struct {
 	doc       ast.Node
 }
 
-func (gm *gomark) Parse(data []byte) error {
-	gm.doc = gm.p.Parse(data)
+func (gm *gomark) Load(ds *base.DataSet) error {
+	// TODO: get this to wprk
+	gm.doc = gm.p.Parse(nil)
 
 	myWalk(gm.doc)
 	//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
