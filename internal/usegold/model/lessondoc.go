@@ -29,6 +29,8 @@ type LessonDoc struct {
 	blocks []*CodeBlock
 }
 
+var _ Tutorial = &LessonDoc{}
+
 func NewLessonDocFromPath(p parser.Parser, path base.FilePath) (ld *LessonDoc, err error) {
 	var c []byte
 	c, err = os.ReadFile(string(path))

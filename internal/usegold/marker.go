@@ -34,7 +34,8 @@ func NewMarker(doMyStuff bool) ifc.Marker {
 
 func (gm *marker) Load(set *base.DataSet) error {
 	panic(`
-	We need a "loader" to convert the dataset to a Tutorial.
+	We need a "loader" to convert a DataSet (list of DataSources) to a Tutorial.
+
 	 doc := gm.p.Parser().Parse(text.NewReader(rawData))
 
 the argument to the command should be an array of datasoruces

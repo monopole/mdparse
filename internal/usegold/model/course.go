@@ -11,6 +11,8 @@ type Course struct {
 	children []Tutorial
 }
 
+var _ Tutorial = &Course{}
+
 // NewCourse makes a Course.
 func NewCourse(p base.FilePath, c []Tutorial) *Course { return &Course{p.Base(), p, c} }
 
