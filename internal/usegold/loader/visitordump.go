@@ -1,8 +1,10 @@
 package loader
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
+	"unicode"
 )
 
 type VisitorDump struct {
@@ -12,21 +14,26 @@ type VisitorDump struct {
 const blanks = "                                                                "
 
 func (v *VisitorDump) VisitContrivedFolder(f *MyContrivedFolder) {
-	fmt.Printf("%s, nRepos=%d\n", f.name, len(f.repos))
+	fmt.Printf("%s\n", f.name)
+	fmt.Println("--- Origins ---")
 	for i := range f.originalSpecs {
-		fmt.Println("  ", f.originalSpecs[i])
+		fmt.Printf("  %s\n", f.originalSpecs[i])
 	}
+	v.indent += 2
+	fmt.Println("--- Repositories ---")
 	for i := range f.repos {
 		v.VisitRepo(f.repos[i])
 	}
-	fmt.Println("Absolute Tree")
+	fmt.Println("--- Absolute Tree ---")
 	v.VisitFolder(f.folderAbs)
-	fmt.Println("Relative Tree")
+	fmt.Println("--- Process Relative Tree ---")
 	v.VisitFolder(f.folderRel)
+	v.indent -= 2
 }
 
-func (v *VisitorDump) VisitRepo(_ *MyRepo) {
-	fmt.Print("TODO: dump repo")
+func (v *VisitorDump) VisitRepo(r *MyRepo) {
+	fmt.Print(blanks[:v.indent])
+	fmt.Printf("%s %s is in %s\n", r.name, r.path, r.tmpDir)
 }
 
 func (v *VisitorDump) VisitFolder(fl *MyFolder) {
@@ -48,5 +55,26 @@ func (v *VisitorDump) VisitFolder(fl *MyFolder) {
 
 func (v *VisitorDump) VisitFile(fi *MyFile) {
 	fmt.Print(blanks[:v.indent])
-	fmt.Println(fi.name)
+	fmt.Print(fi.name)
+	fmt.Print(" : ")
+	c, err := fi.Contents()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(summarize(c) + "...")
+}
+
+func summarize(c []byte) string {
+	const mx = 60
+	if len(c) > mx {
+		c = c[:mx]
+	}
+	c = bytes.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return -1
+	}, c)
+	return string(c)
 }

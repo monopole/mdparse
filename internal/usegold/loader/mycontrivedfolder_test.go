@@ -33,7 +33,9 @@ func TestMyContrivedFolderDebug(t *testing.T) {
 	err = f.Initialize([]string{
 		"fart.md",
 		"/etc",
-		"/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
+		"git@github.com:monopole/mdrip.git",
+		// "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
+		"/home/jregan/myrepos/github.com/monopole/mdparse",
 		"/home/jregan/myrepos/github.com/monopole/mdrip",
 		"/home/jregan/myrepos/github.com/monopole/mdrip/README.md",
 	}, IsAnAllowedFile, IsAnAllowedFolder)
@@ -41,4 +43,5 @@ func TestMyContrivedFolderDebug(t *testing.T) {
 	assert.NotNil(t, f)
 
 	f.Accept(&VisitorDump{})
+	f.Cleanup()
 }

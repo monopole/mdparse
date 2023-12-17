@@ -5,6 +5,9 @@ import (
 	"testing"
 )
 
+func TestMyRepo_Accept(t *testing.T) {
+}
+
 func TestExtractGithubRepoName(t *testing.T) {
 	for _, repoName := range []string{
 		"monopole/mdrip",

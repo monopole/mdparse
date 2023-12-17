@@ -150,11 +150,11 @@ func loadMany(args []string) (*ContrivedFolder, error) {
 
 func loadOne(arg string) (dataNode, error) {
 	if smellsLikeGithubCloneArg(arg) {
-		repoName, path, err := extractGithubRepoName(arg)
-		if err != nil {
-			return nil, err
-		}
-		return loadFromGithub(repoName, path)
+		//repoName, path, err := extractGithubRepoName(arg)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//return loadFromGithub(repoName, path)
 	}
 	return loadFromPath(base.FilePath(arg))
 }

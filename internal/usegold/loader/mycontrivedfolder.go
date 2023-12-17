@@ -47,7 +47,7 @@ func (m *MyContrivedFolder) DirName() string {
 
 // Initialize processes the given arguments.
 // If no error is returned, all the associated arguments are
-// available on disk and readable (at the moment).
+// available on disk and readable when the func return.
 func (m *MyContrivedFolder) Initialize(
 	args []string, isAllowedFile, isAllowedFolder filter) error {
 	if len(args) == 0 {
@@ -85,11 +85,7 @@ func (m *MyContrivedFolder) Initialize(
 
 func (m *MyContrivedFolder) absorb(arg string) error {
 	if smellsLikeGithubCloneArg(arg) {
-		repoName, path, err := extractGithubRepoName(arg)
-		if err != nil {
-			return err
-		}
-		return m.absorbRepo(repoName, path)
+		return m.absorbRepo(arg)
 	}
 	info, err := os.Stat(arg)
 	if err != nil {
@@ -113,13 +109,30 @@ func (m *MyContrivedFolder) absorb(arg string) error {
 	return fmt.Errorf("not a markdown file %q", info.Name())
 }
 
-func (m *MyContrivedFolder) absorbRepo(repoName, path string) error {
-	fmt.Println("*** pretending to absorb repo")
+func (m *MyContrivedFolder) absorbRepo(arg string) error {
+	n, p, err := extractGithubRepoName(arg)
+	if err != nil {
+		return err
+	}
+	for _, r := range m.repos {
+		if r.Name() == n {
+			return fmt.Errorf("already loaded %s", n)
+		}
+	}
+	r := &MyRepo{
+		name: n,
+		path: p,
+	}
+	if err = r.Init(); err != nil {
+		return err
+	}
+	m.repos = append(m.repos, r)
 	return nil
 }
 
-// Reload returns all the content.
-func (m *MyContrivedFolder) Reload() (interface{}, error) {
-	panic("no impl")
-	return nil, nil
+// Cleanup cleans up temp space.
+func (m *MyContrivedFolder) Cleanup() {
+	for _, r := range m.repos {
+		r.CleanUp()
+	}
 }
