@@ -54,9 +54,8 @@ func deleteTheClone(tmpDir string) {
 func smellsLikeGithubCloneArg(arg string) bool {
 	arg = strings.ToLower(arg)
 	return strings.HasPrefix(arg, "gh:") ||
-		strings.HasPrefix(arg, "github.com") ||
 		strings.HasPrefix(arg, "git@github.com:") ||
-		strings.Index(arg, "github.com/") > -1
+		strings.HasPrefix(arg, "https://github.com/")
 }
 
 // extractGithubRepoName parses strings like git@github.com:monopole/mdrip.git or
