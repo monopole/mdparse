@@ -7,7 +7,7 @@ import (
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/monopole/mdparse/internal/ifc"
-	"github.com/monopole/mdrip/base"
+	"github.com/monopole/mdparse/internal/usegold/loader"
 	"io"
 	"os"
 	"strings"
@@ -19,8 +19,8 @@ type gomark struct {
 	doc       ast.Node
 }
 
-func (gm *gomark) Load(ds *base.DataSet) error {
-	// TODO: get this to wprk
+func (gm *gomark) Load(f *loader.MyContrivedFolder) error {
+	panic("TODO: get this to wprk")
 	gm.doc = gm.p.Parse(nil)
 
 	myWalk(gm.doc)

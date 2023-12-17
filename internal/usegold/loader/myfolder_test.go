@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestMyFolderSilly(t *testing.T) {
+func TestMyFolderWhiteBox(t *testing.T) {
 	f1 := &MyFile{
 		myTreeItem: myTreeItem{
 			name: "f1",
@@ -22,8 +22,8 @@ func TestMyFolderSilly(t *testing.T) {
 			name: "bob",
 		},
 	}
-	bob.AddFile(f1)
-	bob.AddFile(f2)
+	bob.AddFileObject(f1)
+	bob.AddFileObject(f2)
 
 	assert.Equal(t, "bob", bob.Name())
 	assert.Equal(t, "/bob", bob.FullName())
@@ -40,7 +40,7 @@ func TestMyFolderSilly(t *testing.T) {
 			name: "joe",
 		},
 	}
-	joe.AddFolder(bob)
+	joe.AddFolderObject(bob)
 
 	assert.Equal(t, "joe", joe.Name())
 	assert.Equal(t, "/joe", joe.FullName())
@@ -48,8 +48,4 @@ func TestMyFolderSilly(t *testing.T) {
 	assert.Equal(t, "f2", f2.Name())
 	assert.Equal(t, "/joe/bob/f2", f2.FullName())
 	assert.Equal(t, "/joe/bob", f2.DirName())
-}
-
-func TestMyFolderAbsorb(t *testing.T) {
-
 }

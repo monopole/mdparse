@@ -3,7 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/monopole/mdrip/base"
+	"github.com/monopole/mdparse/internal/usegold/loader"
 	"os"
 
 	"github.com/monopole/mdparse/internal/file"
@@ -53,12 +53,10 @@ func newCommand() *cobra.Command {
 
 `,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			var dataSet *base.DataSet
-			dataSet, err = base.NewDataSet(args)
-			if err != nil {
+			var f loader.MyContrivedFolder
+			if err = f.Initialize(args, loader.DefaultTreeScanner); err != nil {
 				return
 			}
-
 			var m ifc.Marker
 			if useGoldmark := true; useGoldmark {
 				// https://github.com/yuin/goldmark
@@ -94,7 +92,7 @@ func newCommand() *cobra.Command {
 				//   - It has zero official releases.
 				m = useblue.NewMarker(doMyStuff)
 			}
-			if err = m.Load(dataSet); err != nil {
+			if err = m.Load(&f); err != nil {
 				return
 			}
 			m.Dump()

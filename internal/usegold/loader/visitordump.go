@@ -34,6 +34,9 @@ func (v *VisitorDump) VisitContrivedFolder(f *MyContrivedFolder) {
 func (v *VisitorDump) VisitRepo(r *MyRepo) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Printf("%s %s is in %s\n", r.name, r.path, r.tmpDir)
+	v.indent += 2
+	v.VisitFolder(r.folder)
+	v.indent -= 2
 }
 
 func (v *VisitorDump) VisitFolder(fl *MyFolder) {

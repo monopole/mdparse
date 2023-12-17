@@ -30,23 +30,3 @@ func (fi *MyFile) Accept(v TreeVisitor) {
 func (fi *MyFile) Contents() ([]byte, error) {
 	return os.ReadFile(fi.FullName())
 }
-
-func ReorderFiles(x []*MyFile, ordering []string) []*MyFile {
-	for i := len(ordering) - 1; i >= 0; i-- {
-		x = ShiftFileToTop(x, ordering[i])
-	}
-	return ShiftFileToTop(x, "README")
-}
-
-func ShiftFileToTop(x []*MyFile, top string) []*MyFile {
-	var first []*MyFile
-	var remainder []*MyFile
-	for _, f := range x {
-		if f.Name() == top {
-			first = append(first, f)
-		} else {
-			remainder = append(remainder, f)
-		}
-	}
-	return append(first, remainder...)
-}

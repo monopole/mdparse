@@ -18,36 +18,46 @@ func (fl *MyFolder) Accept(v TreeVisitor) {
 	v.VisitFolder(fl)
 }
 
-func (fl *MyFolder) AddFile(file *MyFile) {
+func (fl *MyFolder) AddFileObject(file *MyFile) {
 	file.parent = fl
 	fl.files = append(fl.files, file)
 }
 
-func (fl *MyFolder) AddFolder(folder *MyFolder) {
+func (fl *MyFolder) AddFolderObject(folder *MyFolder) {
 	folder.parent = fl
 	fl.dirs = append(fl.dirs, folder)
 }
 
-func (fl *MyFolder) absorbFile(path string) error {
+func (fl *MyFolder) IsEmpty() bool {
+	return len(fl.files) == 0 && len(fl.dirs) == 0
+}
+
+// AbsorbFileFromDisk assumes the argument is a path to a file.
+// The final file will be made available for loading,
+// but nothing on the intervening path will be read
+// (i.e. no sibling trees).
+func (fl *MyFolder) AbsorbFileFromDisk(path string) error {
 	slog.Debug("Absorbing   FILE", "path", path, "parent", fl.FullName())
 	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
 		folder = fl.findOrCreateDir(dir)
 	}
-	folder.addFile(name)
-	return nil
+	return folder.addFile(name)
 }
 
-func (fl *MyFolder) absorbFolder(path string) error {
+// AbsorbFolderFromDisk assumes the argument is a path to a folder.
+// The final folder and all it's contents will be loaded in,
+// but nothing on the intervening path will be read
+// (i.e. no sibling trees).
+func (fl *MyFolder) AbsorbFolderFromDisk(ts *TreeScanner, path string) error {
 	slog.Debug("Absorbing FOLDER", "path", path, "parent", fl.FullName())
 	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
 		folder = fl.findOrCreateDir(dir)
 	}
-	folder.addFolder(name)
-	return nil
+	return ts.addScannedFolder(folder, name)
 }
 
 func (fl *MyFolder) findOrCreateDir(path string) *MyFolder {
@@ -64,21 +74,32 @@ func (fl *MyFolder) findOrCreateDir(path string) *MyFolder {
 		}
 	}
 	slog.Debug("   creating folder", "name", name)
-	return folder.addFolder(name)
+	return folder.addPlaceholderFolder(name)
 }
 
-func (fl *MyFolder) addFile(name string) {
+func (fl *MyFolder) addFile(name string) error {
 	slog.Debug("adding   FILE", "name", name, "parent", fl.FullName())
+	for _, fi := range fl.files {
+		if fi.Name() == name {
+			// Already got it
+			return nil
+		}
+	}
 	fi := MyFile{
 		myTreeItem: myTreeItem{
 			parent: fl,
 			name:   name,
 		},
 	}
+	// Do a test read.
+	if _, err := fi.Contents(); err != nil {
+		return err
+	}
 	fl.files = append(fl.files, &fi)
+	return nil
 }
 
-func (fl *MyFolder) addFolder(name string) *MyFolder {
+func (fl *MyFolder) addPlaceholderFolder(name string) *MyFolder {
 	slog.Debug("adding   FOLDER", "name", name, "parent", fl.FullName())
 	dir := MyFolder{
 		myTreeItem: myTreeItem{

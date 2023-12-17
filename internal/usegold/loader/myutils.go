@@ -39,20 +39,3 @@ func IsAnAllowedFolder(info os.FileInfo) bool {
 	// Ignore .git, etc.
 	return !strings.HasPrefix(filepath.Base(n), ".")
 }
-
-// MyIsOrderFile returns true if the file appears to be a "reorder"
-// file specifying how to re-order the files in the directory
-// in some fashion other than directory order.
-func MyIsOrderFile(n string) bool {
-	s, err := os.Stat(n)
-	if err != nil {
-		return false
-	}
-	if s.IsDir() {
-		return false
-	}
-	if !s.Mode().IsRegular() {
-		return false
-	}
-	return filepath.Base(s.Name()) == "README_ORDER.txt"
-}

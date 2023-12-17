@@ -9,17 +9,17 @@ import (
 type filter func(info os.FileInfo) bool
 
 // MyContrivedFolder is a named grouping of some subset of local disk,
-// gather from both absolute paths and paths specified relative to the
-// CWD of the current process, and a list of repo specifications.
+// gathered from both absolute paths and paths specified relative to the
+// CWD of the current process, and a list of GitHub repos.
 type MyContrivedFolder struct {
-	name            string
-	originalSpecs   []string
-	repos           []*MyRepo
-	folderAbs       *MyFolder
-	cwd             string
-	folderRel       *MyFolder
-	isAllowedFile   filter
-	isAllowedFolder filter
+	name          string
+	originalSpecs []string
+	ts            *TreeScanner
+	repos         []*MyRepo
+	folderAbs     *MyFolder
+	cwd           string
+	// folderRel is relative to cwd
+	folderRel *MyFolder
 }
 
 var _ MyTreeItem = &MyContrivedFolder{}
@@ -47,14 +47,16 @@ func (m *MyContrivedFolder) DirName() string {
 
 // Initialize processes the given arguments.
 // If no error is returned, all the associated arguments are
-// available on disk and readable when the func return.
+// available on disk and readable when the func returns.
 func (m *MyContrivedFolder) Initialize(
-	args []string, isAllowedFile, isAllowedFolder filter) error {
+	args []string, tb *TreeScanner) error {
 	if len(args) == 0 {
 		return fmt.Errorf("needs some args")
 	}
-	m.isAllowedFile = isAllowedFile
-	m.isAllowedFolder = isAllowedFolder
+	if tb == nil {
+		tb = DefaultTreeScanner
+	}
+	m.ts = tb
 	m.name = "contrived" // TODO: something better?
 	{
 		tmp, err := os.Getwd()
@@ -63,16 +65,8 @@ func (m *MyContrivedFolder) Initialize(
 		}
 		m.cwd = stripTrailingSlash(tmp)
 	}
-	m.folderAbs = &MyFolder{
-		myTreeItem: myTreeItem{
-			name: "/",
-		},
-	}
-	m.folderRel = &MyFolder{
-		myTreeItem: myTreeItem{
-			name: m.cwd,
-		},
-	}
+	m.folderAbs = &MyFolder{myTreeItem: myTreeItem{name: "/"}}
+	m.folderRel = &MyFolder{myTreeItem: myTreeItem{name: m.cwd}}
 	m.originalSpecs = make([]string, len(args))
 	for i := range args {
 		if err := m.absorb(args[i]); err != nil {
@@ -92,19 +86,19 @@ func (m *MyContrivedFolder) absorb(arg string) error {
 		return err
 	}
 	if info.IsDir() {
-		if m.isAllowedFolder(info) {
+		if m.ts.IsAllowedFolder(info) {
 			if filepath.IsAbs(arg) {
-				return m.folderAbs.absorbFolder(arg)
+				return m.folderAbs.AbsorbFolderFromDisk(m.ts, arg)
 			}
-			return m.folderRel.absorbFolder(arg)
+			return m.folderRel.AbsorbFolderFromDisk(m.ts, arg)
 		}
 		return fmt.Errorf("illegal folder %q", info.Name())
 	}
-	if m.isAllowedFile(info) {
+	if m.ts.IsAllowedFile(info) {
 		if filepath.IsAbs(arg) {
-			return m.folderAbs.absorbFile(arg)
+			return m.folderAbs.AbsorbFileFromDisk(arg)
 		}
-		return m.folderRel.absorbFile(arg)
+		return m.folderRel.AbsorbFileFromDisk(arg)
 	}
 	return fmt.Errorf("not a markdown file %q", info.Name())
 }
@@ -123,7 +117,7 @@ func (m *MyContrivedFolder) absorbRepo(arg string) error {
 		name: n,
 		path: p,
 	}
-	if err = r.Init(); err != nil {
+	if err = r.Init(m.ts); err != nil {
 		return err
 	}
 	m.repos = append(m.repos, r)

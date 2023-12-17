@@ -49,22 +49,27 @@ func (r *MyRepo) Name() string {
 	return r.name
 }
 
-func (r *MyRepo) Init() (err error) {
+func (r *MyRepo) Init(tb *TreeScanner) (err error) {
 	r.CleanUp()
 	r.tmpDir, err = cloneRepo(r.name)
 	if err != nil {
 		return
 	}
-	fullPath := r.tmpDir
+	base := filepath.Base(r.tmpDir)
+	dir := filepath.Dir(r.tmpDir)
 	if len(r.path) > 0 {
-		fullPath = filepath.Join(r.tmpDir, r.path)
+		base = filepath.Join(base, r.path)
 	}
+	//fmt.Printf("r.tmpDir = %s\n", r.tmpDir)
+	//fmt.Printf("  r.path = %s\n", r.path)
+	//fmt.Printf("    base = %s\n", base)
+	//fmt.Printf("     dir = %s\n", dir)
 	r.folder = &MyFolder{
 		myTreeItem: myTreeItem{
-			name: r.tmpDir,
+			name: dir,
 		},
 	}
-	return r.folder.absorbFolder(fullPath)
+	return r.folder.AbsorbFolderFromDisk(tb, base)
 }
 
 func cloneRepo(repoName string) (string, error) {
