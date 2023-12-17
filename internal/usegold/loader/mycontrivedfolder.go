@@ -19,12 +19,17 @@ type MyContrivedFolder struct {
 }
 
 func (m *MyContrivedFolder) Dump() {
-	fmt.Printf("%s, nRepos=%d, %v\n", m.name, len(m.repos), m.originalSpecs)
+	fmt.Printf("%s, nRepos=%d\n", m.name, len(m.repos))
+	for i := range m.originalSpecs {
+		fmt.Println("  ", m.originalSpecs[i])
+	}
 	for i := range m.repos {
 		m.repos[i].Dump()
 	}
-	m.folderAbs.Dump(0)
-	m.folderRel.Dump(0)
+	fmt.Println("Absolute Tree")
+	m.folderAbs.Dump(2)
+	fmt.Println("Relative Tree")
+	m.folderRel.Dump(2)
 }
 
 func (m *MyContrivedFolder) Parent() MyTreeItem {
@@ -54,17 +59,20 @@ func NewMyContrivedFolder(args []string) (*MyContrivedFolder, error) {
 	}
 	var f MyContrivedFolder
 	f.name = "contrived" // TODO: something better?
+	{
+		tmp, _ := os.Getwd()
+		f.cwd = stripTrailingSlash(tmp)
+	}
 	f.folderAbs = &MyFolder{
 		myTreeItem: myTreeItem{
-			name: "{ABS}",
+			name: "/",
 		},
 	}
 	f.folderRel = &MyFolder{
 		myTreeItem: myTreeItem{
-			name: "{REL}",
+			name: f.cwd,
 		},
 	}
-	f.cwd, _ = os.Getwd()
 	f.originalSpecs = make([]string, len(args))
 	for i := range args {
 		if err := f.absorb(args[i]); err != nil {

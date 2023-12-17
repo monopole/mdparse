@@ -16,7 +16,10 @@ type MyFolder struct {
 func (fl *MyFolder) Dump(indent int) {
 	fmt.Print(blanks[:indent])
 	fmt.Print(fl.name)
-	fmt.Println(string(filepath.Separator))
+	if fl.name != string(filepath.Separator) {
+		fmt.Print(string(filepath.Separator))
+	}
+	fmt.Println()
 	for _, x := range fl.files {
 		x.Dump(indent + 2)
 	}

@@ -8,12 +8,16 @@ import (
 
 const blanks = "                                                                "
 
-func fSplit(path string) (dir, name string) {
-	dir, name = filepath.Split(path)
-	if strings.HasSuffix(dir, string(filepath.Separator)) {
-		dir = dir[:len(dir)-1]
+func fSplit(path string) (string, string) {
+	dir, name := filepath.Split(path)
+	return stripTrailingSlash(dir), name
+}
+
+func stripTrailingSlash(path string) string {
+	if strings.HasSuffix(path, string(filepath.Separator)) {
+		return path[:len(path)-1]
 	}
-	return
+	return path
 }
 
 func isAnAllowedFile(info os.FileInfo) bool {
