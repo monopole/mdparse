@@ -23,20 +23,22 @@ func turnOnDebugging() {
 func TestMyContrivedFolderDebug(t *testing.T) {
 	var (
 		err error
-		f   *MyContrivedFolder
+		f   MyContrivedFolder
 	)
-	f, err = NewMyContrivedFolder([]string{"/etc/passwd"})
+	err = f.Initialize(
+		[]string{"/etc/passwd"}, IsAnAllowedFile, IsAnAllowedFolder)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not a markdown file")
-	assert.Nil(t, f)
-	f, err = NewMyContrivedFolder([]string{
+
+	err = f.Initialize([]string{
 		"fart.md",
 		"/etc",
 		"/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
 		"/home/jregan/myrepos/github.com/monopole/mdrip",
 		"/home/jregan/myrepos/github.com/monopole/mdrip/README.md",
-	})
+	}, IsAnAllowedFile, IsAnAllowedFolder)
 	assert.NoError(t, err)
 	assert.NotNil(t, f)
-	f.Dump()
+
+	f.Accept(&VisitorDump{})
 }

@@ -1,7 +1,6 @@
 package loader
 
 import (
-	"fmt"
 	"log/slog"
 	"path/filepath"
 )
@@ -13,22 +12,11 @@ type MyFolder struct {
 	dirs  []*MyFolder
 }
 
-func (fl *MyFolder) Dump(indent int) {
-	fmt.Print(blanks[:indent])
-	fmt.Print(fl.name)
-	if fl.name != string(filepath.Separator) {
-		fmt.Print(string(filepath.Separator))
-	}
-	fmt.Println()
-	for _, x := range fl.files {
-		x.Dump(indent + 2)
-	}
-	for _, x := range fl.dirs {
-		x.Dump(indent + 2)
-	}
-}
-
 var _ MyTreeItem = &MyFolder{}
+
+func (fl *MyFolder) Accept(v TreeVisitor) {
+	v.VisitFolder(fl)
+}
 
 func (fl *MyFolder) AddFile(file *MyFile) {
 	file.parent = fl
@@ -42,7 +30,7 @@ func (fl *MyFolder) AddFolder(folder *MyFolder) {
 
 func (fl *MyFolder) absorbFile(path string) error {
 	slog.Debug("Absorbing   FILE", "path", path, "parent", fl.FullName())
-	dir, name := fSplit(path)
+	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
 		folder = fl.findOrCreateDir(dir)
@@ -53,7 +41,7 @@ func (fl *MyFolder) absorbFile(path string) error {
 
 func (fl *MyFolder) absorbFolder(path string) error {
 	slog.Debug("Absorbing FOLDER", "path", path, "parent", fl.FullName())
-	dir, name := fSplit(path)
+	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
 		folder = fl.findOrCreateDir(dir)
@@ -63,7 +51,7 @@ func (fl *MyFolder) absorbFolder(path string) error {
 }
 
 func (fl *MyFolder) findOrCreateDir(path string) *MyFolder {
-	dir, name := fSplit(path)
+	dir, name := FSplit(path)
 	slog.Debug("findOrCreateDir", "path", path)
 	folder := fl
 	if dir != "" && dir != string(filepath.Separator) {

@@ -4,15 +4,20 @@ import (
 	"path/filepath"
 )
 
-func myScanFolder(path string) (*MyFolder, error) {
-	return nil, nil
-}
-
 type MyTreeItem interface {
 	Parent() MyTreeItem
 	Name() string
 	FullName() string
 	DirName() string
+	Accept(TreeVisitor)
+}
+
+// TreeVisitor has the ability to visit the items specified in its methods.
+type TreeVisitor interface {
+	VisitRepo(*MyRepo)
+	VisitContrivedFolder(*MyContrivedFolder)
+	VisitFile(*MyFile)
+	VisitFolder(*MyFolder)
 }
 
 type myTreeItem struct {
@@ -51,16 +56,6 @@ func (ti *myTreeItem) DirName() string {
 	return ti.parent.FullName()
 }
 
-type MyGitFolder struct {
-	repo  string
-	files []*MyFile
-	dirs  []*MyFolder
-}
-
-func (mgf *MyGitFolder) DirName() string {
-	return mgf.repo + ":::"
-}
-
-func (mgf *MyGitFolder) AbsPath() string {
-	return mgf.repo + "://"
+func (ti *myTreeItem) Accept(_ TreeVisitor) {
+	// do nothing for now
 }

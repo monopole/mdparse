@@ -6,9 +6,7 @@ import (
 	"strings"
 )
 
-const blanks = "                                                                "
-
-func fSplit(path string) (string, string) {
+func FSplit(path string) (string, string) {
 	dir, name := filepath.Split(path)
 	return stripTrailingSlash(dir), name
 }
@@ -20,7 +18,7 @@ func stripTrailingSlash(path string) string {
 	return path
 }
 
-func isAnAllowedFile(info os.FileInfo) bool {
+func IsAnAllowedFile(info os.FileInfo) bool {
 	if !info.Mode().IsRegular() {
 		return false
 	}
@@ -32,7 +30,7 @@ func isAnAllowedFile(info os.FileInfo) bool {
 	return strings.Index(badLeadingChar, string(base[0])) < 0
 }
 
-func isAnAllowedFolder(info os.FileInfo) bool {
+func IsAnAllowedFolder(info os.FileInfo) bool {
 	n := info.Name()
 	// Allow special dir names.
 	if n == "." || n == "./" || n == ".." {

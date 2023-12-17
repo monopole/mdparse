@@ -6,30 +6,26 @@ import (
 	"path/filepath"
 )
 
+type filter func(info os.FileInfo) bool
+
 // MyContrivedFolder is a named grouping of some subset of local disk,
 // gather from both absolute paths and paths specified relative to the
 // CWD of the current process, and a list of repo specifications.
 type MyContrivedFolder struct {
-	name          string
-	originalSpecs []string
-	repos         []*MyRepo
-	folderAbs     *MyFolder
-	cwd           string
-	folderRel     *MyFolder
+	name            string
+	originalSpecs   []string
+	repos           []*MyRepo
+	folderAbs       *MyFolder
+	cwd             string
+	folderRel       *MyFolder
+	isAllowedFile   filter
+	isAllowedFolder filter
 }
 
-func (m *MyContrivedFolder) Dump() {
-	fmt.Printf("%s, nRepos=%d\n", m.name, len(m.repos))
-	for i := range m.originalSpecs {
-		fmt.Println("  ", m.originalSpecs[i])
-	}
-	for i := range m.repos {
-		m.repos[i].Dump()
-	}
-	fmt.Println("Absolute Tree")
-	m.folderAbs.Dump(2)
-	fmt.Println("Relative Tree")
-	m.folderRel.Dump(2)
+var _ MyTreeItem = &MyContrivedFolder{}
+
+func (m *MyContrivedFolder) Accept(v TreeVisitor) {
+	v.VisitContrivedFolder(m)
 }
 
 func (m *MyContrivedFolder) Parent() MyTreeItem {
@@ -41,6 +37,7 @@ func (m *MyContrivedFolder) Name() string {
 }
 
 func (m *MyContrivedFolder) FullName() string {
+	// TODO: use originalSpecs?
 	return m.name
 }
 
@@ -48,39 +45,42 @@ func (m *MyContrivedFolder) DirName() string {
 	return ""
 }
 
-var _ MyTreeItem = &MyContrivedFolder{}
-
-// NewMyContrivedFolder returns an instance with validated arguments.
-// If this returns without error, all the associated arguments are
+// Initialize processes the given arguments.
+// If no error is returned, all the associated arguments are
 // available on disk and readable (at the moment).
-func NewMyContrivedFolder(args []string) (*MyContrivedFolder, error) {
+func (m *MyContrivedFolder) Initialize(
+	args []string, isAllowedFile, isAllowedFolder filter) error {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("needs some args")
+		return fmt.Errorf("needs some args")
 	}
-	var f MyContrivedFolder
-	f.name = "contrived" // TODO: something better?
+	m.isAllowedFile = isAllowedFile
+	m.isAllowedFolder = isAllowedFolder
+	m.name = "contrived" // TODO: something better?
 	{
-		tmp, _ := os.Getwd()
-		f.cwd = stripTrailingSlash(tmp)
+		tmp, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		m.cwd = stripTrailingSlash(tmp)
 	}
-	f.folderAbs = &MyFolder{
+	m.folderAbs = &MyFolder{
 		myTreeItem: myTreeItem{
 			name: "/",
 		},
 	}
-	f.folderRel = &MyFolder{
+	m.folderRel = &MyFolder{
 		myTreeItem: myTreeItem{
-			name: f.cwd,
+			name: m.cwd,
 		},
 	}
-	f.originalSpecs = make([]string, len(args))
+	m.originalSpecs = make([]string, len(args))
 	for i := range args {
-		if err := f.absorb(args[i]); err != nil {
-			return nil, err
+		if err := m.absorb(args[i]); err != nil {
+			return err
 		}
-		f.originalSpecs[i] = args[i]
+		m.originalSpecs[i] = args[i]
 	}
-	return &f, nil
+	return nil
 }
 
 func (m *MyContrivedFolder) absorb(arg string) error {
@@ -96,7 +96,7 @@ func (m *MyContrivedFolder) absorb(arg string) error {
 		return err
 	}
 	if info.IsDir() {
-		if isAnAllowedFolder(info) {
+		if m.isAllowedFolder(info) {
 			if filepath.IsAbs(arg) {
 				return m.folderAbs.absorbFolder(arg)
 			}
@@ -104,7 +104,7 @@ func (m *MyContrivedFolder) absorb(arg string) error {
 		}
 		return fmt.Errorf("illegal folder %q", info.Name())
 	}
-	if isAnAllowedFile(info) {
+	if m.isAllowedFile(info) {
 		if filepath.IsAbs(arg) {
 			return m.folderAbs.absorbFile(arg)
 		}

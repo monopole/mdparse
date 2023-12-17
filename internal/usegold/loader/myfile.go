@@ -13,9 +13,8 @@ type MyFile struct {
 
 var _ MyTreeItem = &MyFile{}
 
-func (fi *MyFile) Dump(indent int) {
-	fmt.Print(blanks[:indent])
-	fmt.Println(fi.name)
+func (fi *MyFile) Accept(v TreeVisitor) {
+	v.VisitFile(fi)
 }
 
 func myScanFile(path string) (*MyFile, error) {
