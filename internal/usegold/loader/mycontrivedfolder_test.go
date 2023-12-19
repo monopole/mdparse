@@ -23,49 +23,77 @@ func turnOnDebugging() {
 
 var ts = DefaultFsLoader
 
+func TestMakeTreeItem(t *testing.T) {
+	type testC struct {
+		arg     string
+		topName string
+	}
+	for n, tc := range map[string]testC{
+		"t1": {
+			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse",
+			topName: "/",
+		},
+		"t2": {
+			arg:     ".",
+			topName: "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader",
+		},
+	} {
+		t.Run(n, func(t *testing.T) {
+			f, err := MakeTreeItem(DefaultFsLoader, tc.arg)
+			assert.NoError(t, err)
+			f.Accept(&VisitorDump{})
+			assert.Equal(t, tc.topName, f.Name())
+		})
+	}
+}
+
 func TestMyContrivedFolderErrors(t *testing.T) {
 	var (
 		err error
 		f   MyContrivedFolder
 	)
-	err = f.Initialize([]string{"/etc/passwd"}, ts)
+	err = f.Initialize("/etc/passwd", ts)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not a markdown file")
-	err = f.Initialize([]string{"/etc"}, ts)
+	err = f.Initialize("/etc", ts)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unable to read folder")
 }
 
 func TestMyContrivedFolderHappy(t *testing.T) {
-	var (
-		err error
-		f   MyContrivedFolder
-	)
 	// turnOnDebugging()
-	err = f.Initialize([]string{
-		"fart.md",
-		"/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
-		"/home/jregan/myrepos/github.com/monopole/mdparse",
-		"/home/jregan/myrepos/github.com/monopole/mdrip",
-		"/home/jregan/myrepos/github.com/monopole/mdrip/README.md",
-	}, ts)
-	assert.NoError(t, err)
-	f.Accept(&VisitorDump{})
-	f.Cleanup()
-}
-
-func xxx_disabled_TestMyContrivedFolderGit(t *testing.T) {
-	var (
-		err error
-		f   MyContrivedFolder
-	)
-	// turnOnDebugging()
-	err = f.Initialize([]string{
-		"fart.md",
-		//"git@github.com:monopole/mdrip.git",
-		"git@github.com:monopole/mdrip.git/data",
-	}, ts)
-	assert.NoError(t, err)
-	f.Accept(&VisitorDump{})
-	f.Cleanup()
+	type testC struct {
+		arg string
+	}
+	for n, tc := range map[string]testC{
+		"t1": {
+			arg: "fart.md",
+		},
+		"t2": {
+			arg: "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
+		},
+		"t3": {
+			arg: "/home/jregan/myrepos/github.com/monopole/mdparse",
+		},
+		"t4": {
+			arg: "/home/jregan/myrepos/github.com/monopole/mdrip",
+		},
+		"t5": {
+			arg: "/home/jregan/myrepos/github.com/monopole/mdrip/README.md",
+		},
+		"gh1": {
+			arg: "git@github.com:monopole/mdrip.git",
+		},
+		"gh2": {
+			arg: "git@github.com:monopole/mdrip.git/data",
+		},
+	} {
+		t.Run(n, func(t *testing.T) {
+			var f MyContrivedFolder
+			err := f.Initialize(tc.arg, ts)
+			assert.NoError(t, err)
+			f.Accept(&VisitorDump{})
+			f.Cleanup()
+		})
+	}
 }

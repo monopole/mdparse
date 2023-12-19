@@ -16,9 +16,6 @@ const blanks = "                                                                
 func (v *VisitorDump) VisitContrivedFolder(f *MyContrivedFolder) {
 	fmt.Printf("%s\n", f.name)
 	fmt.Println("--- Origins ---")
-	for i := range f.originalSpecs {
-		fmt.Printf("  %s\n", f.originalSpecs[i])
-	}
 	v.indent += 2
 	fmt.Println("--- Repositories ---")
 	for i := range f.repos {

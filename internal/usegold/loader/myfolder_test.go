@@ -2,6 +2,7 @@ package loader
 
 import (
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 	"testing"
 )
 
@@ -48,4 +49,32 @@ func TestMyFolderWhiteBox(t *testing.T) {
 	assert.Equal(t, "f2", f2.Name())
 	assert.Equal(t, "/joe/bob/f2", f2.FullName())
 	assert.Equal(t, "/joe/bob", f2.DirName())
+}
+
+func TestClean(t *testing.T) {
+	// Just documenting behavior
+	assert.Equal(t, ".", filepath.Clean(".///"))
+	assert.Equal(t, "../..", filepath.Clean("./../../"))
+	assert.Equal(t, "hoser", "./hoser"[2:])
+}
+
+func TestLoadFolder(t *testing.T) {
+	type testC struct {
+		arg string
+	}
+	for n, tc := range map[string]testC{
+		//"t1": {
+		//	arg: "/home/jregan/myrepos/github.com/monopole/mdparse",
+		//},
+		//"t2": {
+		//	arg: ".",
+		//},
+	} {
+		t.Run(n, func(t *testing.T) {
+			f, err := LoadFolder(DefaultFsLoader, tc.arg)
+			assert.NoError(t, err)
+			f.Accept(&VisitorDump{})
+			assert.Equal(t, "mdparse", f.name)
+		})
+	}
 }

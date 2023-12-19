@@ -5,9 +5,62 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
+
+// Demo how this works.
+func TestFsSplit(t *testing.T) {
+	type testC struct {
+		arg string
+		d   string
+		fn  string
+	}
+	for n, tc := range map[string]testC{
+		"t1": {
+			arg: "/home/aaa/bbb",
+			d:   "/home/aaa/",
+			fn:  "bbb",
+		},
+		"t2": {
+			arg: "/bbb",
+			d:   "/",
+			fn:  "bbb",
+		},
+		"t3": {
+			arg: "bbb",
+			d:   "",
+			fn:  "bbb",
+		},
+		"t4": {
+			arg: "",
+			d:   "",
+			fn:  "",
+		},
+		"t5": {
+			arg: "/",
+			d:   "/",
+			fn:  "",
+		},
+		"t6": {
+			arg: ".",
+			d:   "",
+			fn:  ".", // odd
+		},
+		"t7": {
+			arg: "./",
+			d:   "./",
+			fn:  "",
+		},
+	} {
+		t.Run(n, func(t *testing.T) {
+			d, fn := filepath.Split(tc.arg)
+			assert.Equal(t, tc.d, d)
+			assert.Equal(t, tc.fn, fn)
+		})
+	}
+}
 
 func TestMyFSplit(t *testing.T) {
 	type testC struct {
@@ -39,6 +92,16 @@ func TestMyFSplit(t *testing.T) {
 		"t5": {
 			arg: "/",
 			d:   "",
+			fn:  "",
+		},
+		"t6": {
+			arg: ".",
+			d:   "",
+			fn:  ".",
+		},
+		"t7": {
+			arg: "./",
+			d:   ".",
 			fn:  "",
 		},
 	} {

@@ -32,6 +32,51 @@ func (fl *MyFolder) IsEmpty() bool {
 	return len(fl.files) == 0 && len(fl.dirs) == 0
 }
 
+// LoadFolder loads the folder at the given path.
+func LoadFolder(fsl *FsLoader, path string) (*MyFolder, error) {
+	// First create a parent tree.
+	// If the path is an absolute path, the parent folder is named "/",
+	// and has a nil parent.
+	// If the path is a relative path, the parent folder is named "",
+	//
+
+	var placeholder MyFolder
+	dir, name := filepath.Split(path)
+	if dir != "" && dir != string(filepath.Separator) {
+	}
+	folder := &placeholder
+	if dir != "" {
+		// Create a chain of placeholder parents...
+		folder = placeholder.buildParentTree(dir)
+	}
+	return fsl.loadFolderFromFs(folder, name)
+}
+
+func (fl *MyFolder) buildParentTree(path string) *MyFolder {
+	dir, name := filepath.Split(path)
+	folder := fl
+	if dir != "" && dir != string(filepath.Separator) && dir != "." && dir != "./" {
+		folder = fl.buildParentTree(dir)
+	}
+	return folder.insertSubFolder(name)
+}
+
+func (fl *MyFolder) insertSubFolder(name string) *MyFolder {
+	for _, d := range fl.dirs {
+		if d.name == name {
+			return d
+		}
+	}
+	dir := MyFolder{
+		myTreeItem: myTreeItem{
+			parent: fl,
+			name:   name,
+		},
+	}
+	fl.dirs = append(fl.dirs, &dir)
+	return &dir
+}
+
 // AbsorbFileFromDisk assumes the argument is a path to a file.
 // The final file will be made available for loading,
 // but nothing on the intervening path will be read
@@ -41,7 +86,7 @@ func (fl *MyFolder) AbsorbFileFromDisk(path string) error {
 	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
-		folder = fl.findOrCreateDir(dir)
+		folder = fl.buildParentTree(dir)
 	}
 	return folder.loadFileFromFs(name)
 }
@@ -55,7 +100,7 @@ func (fl *MyFolder) AbsorbFolderFromDisk(ts *FsLoader, path string) error {
 	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
-		folder = fl.findOrCreateDir(dir)
+		folder = fl.buildParentTree(dir)
 	}
 	child, err := ts.loadFolderFromFs(folder, name)
 	if err != nil {
@@ -65,23 +110,6 @@ func (fl *MyFolder) AbsorbFolderFromDisk(ts *FsLoader, path string) error {
 		folder.dirs = append(folder.dirs, child)
 	}
 	return nil
-}
-
-func (fl *MyFolder) findOrCreateDir(path string) *MyFolder {
-	dir, name := FSplit(path)
-	slog.Debug("findOrCreateDir", "path", path)
-	folder := fl
-	if dir != "" && dir != string(filepath.Separator) {
-		folder = fl.findOrCreateDir(dir)
-	}
-	for _, item := range folder.dirs {
-		if item.name == name {
-			slog.Debug("   found folder", "name", name)
-			return item
-		}
-	}
-	slog.Debug("   creating folder", "name", name)
-	return folder.addPlaceholderFolder(name)
 }
 
 func (fl *MyFolder) loadFileFromFs(name string) error {
@@ -104,16 +132,4 @@ func (fl *MyFolder) loadFileFromFs(name string) error {
 	}
 	fl.files = append(fl.files, &fi)
 	return nil
-}
-
-func (fl *MyFolder) addPlaceholderFolder(name string) *MyFolder {
-	slog.Debug("adding   FOLDER", "name", name, "parent", fl.FullName())
-	dir := MyFolder{
-		myTreeItem: myTreeItem{
-			parent: fl,
-			name:   name,
-		},
-	}
-	fl.dirs = append(fl.dirs, &dir)
-	return &dir
 }
