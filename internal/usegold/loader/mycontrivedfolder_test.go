@@ -21,7 +21,7 @@ func turnOnDebugging() {
 	})))
 }
 
-var ts = DefaultTreeScanner
+var ts = DefaultFsLoader
 
 func TestMyContrivedFolderErrors(t *testing.T) {
 	var (

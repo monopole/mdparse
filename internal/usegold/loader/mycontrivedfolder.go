@@ -14,7 +14,7 @@ type filter func(info os.FileInfo) bool
 type MyContrivedFolder struct {
 	name          string
 	originalSpecs []string
-	ts            *TreeScanner
+	fsl           *FsLoader
 	repos         []*MyRepo
 	folderAbs     *MyFolder
 	cwd           string
@@ -49,14 +49,14 @@ func (m *MyContrivedFolder) DirName() string {
 // If no error is returned, all the associated arguments are
 // available on disk and readable when the func returns.
 func (m *MyContrivedFolder) Initialize(
-	args []string, tb *TreeScanner) error {
+	args []string, ts *FsLoader) error {
 	if len(args) == 0 {
 		return fmt.Errorf("needs some args")
 	}
-	if tb == nil {
-		tb = DefaultTreeScanner
+	if ts == nil {
+		ts = DefaultFsLoader
 	}
-	m.ts = tb
+	m.fsl = ts
 	m.name = "contrived" // TODO: something better?
 	{
 		tmp, err := os.Getwd()
@@ -86,15 +86,15 @@ func (m *MyContrivedFolder) absorb(arg string) error {
 		return err
 	}
 	if info.IsDir() {
-		if m.ts.IsAllowedFolder(info) {
+		if m.fsl.IsAllowedFolder(info) {
 			if filepath.IsAbs(arg) {
-				return m.folderAbs.AbsorbFolderFromDisk(m.ts, arg)
+				return m.folderAbs.AbsorbFolderFromDisk(m.fsl, arg)
 			}
-			return m.folderRel.AbsorbFolderFromDisk(m.ts, arg)
+			return m.folderRel.AbsorbFolderFromDisk(m.fsl, arg)
 		}
 		return fmt.Errorf("illegal folder %q", info.Name())
 	}
-	if m.ts.IsAllowedFile(info) {
+	if m.fsl.IsAllowedFile(info) {
 		if filepath.IsAbs(arg) {
 			return m.folderAbs.AbsorbFileFromDisk(arg)
 		}
@@ -117,7 +117,7 @@ func (m *MyContrivedFolder) absorbRepo(arg string) error {
 		name: n,
 		path: p,
 	}
-	if err = r.Init(m.ts); err != nil {
+	if err = r.Init(m.fsl); err != nil {
 		return err
 	}
 	m.repos = append(m.repos, r)

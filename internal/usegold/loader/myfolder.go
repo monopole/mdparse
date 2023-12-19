@@ -43,21 +43,28 @@ func (fl *MyFolder) AbsorbFileFromDisk(path string) error {
 	if dir != "" {
 		folder = fl.findOrCreateDir(dir)
 	}
-	return folder.addFile(name)
+	return folder.loadFileFromFs(name)
 }
 
 // AbsorbFolderFromDisk assumes the argument is a path to a folder.
 // The final folder and all it's contents will be loaded in,
 // but nothing on the intervening path will be read
 // (i.e. no sibling trees).
-func (fl *MyFolder) AbsorbFolderFromDisk(ts *TreeScanner, path string) error {
+func (fl *MyFolder) AbsorbFolderFromDisk(ts *FsLoader, path string) error {
 	slog.Debug("Absorbing FOLDER", "path", path, "parent", fl.FullName())
 	dir, name := FSplit(path)
 	folder := fl
 	if dir != "" {
 		folder = fl.findOrCreateDir(dir)
 	}
-	return ts.addScannedFolder(folder, name)
+	child, err := ts.loadFolderFromFs(folder, name)
+	if err != nil {
+		return err
+	}
+	if child != nil {
+		folder.dirs = append(folder.dirs, child)
+	}
+	return nil
 }
 
 func (fl *MyFolder) findOrCreateDir(path string) *MyFolder {
@@ -77,7 +84,7 @@ func (fl *MyFolder) findOrCreateDir(path string) *MyFolder {
 	return folder.addPlaceholderFolder(name)
 }
 
-func (fl *MyFolder) addFile(name string) error {
+func (fl *MyFolder) loadFileFromFs(name string) error {
 	slog.Debug("adding   FILE", "name", name, "parent", fl.FullName())
 	for _, fi := range fl.files {
 		if fi.Name() == name {

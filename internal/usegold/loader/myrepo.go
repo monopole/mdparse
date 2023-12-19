@@ -49,7 +49,7 @@ func (r *MyRepo) Name() string {
 	return r.name
 }
 
-func (r *MyRepo) Init(tb *TreeScanner) (err error) {
+func (r *MyRepo) Init(tb *FsLoader) (err error) {
 	r.CleanUp()
 	r.tmpDir, err = cloneRepo(r.name)
 	if err != nil {

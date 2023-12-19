@@ -54,7 +54,7 @@ func newCommand() *cobra.Command {
 `,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var f loader.MyContrivedFolder
-			if err = f.Initialize(args, loader.DefaultTreeScanner); err != nil {
+			if err = f.Initialize(args, loader.DefaultFsLoader); err != nil {
 				return
 			}
 			var m ifc.Marker
