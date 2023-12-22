@@ -1,61 +1,66 @@
-package loader
+package loader_test
 
 import (
+	. "github.com/monopole/mdparse/internal/usegold/loader"
+
 	"github.com/stretchr/testify/assert"
-	"path/filepath"
 	"testing"
 )
 
-func TestMyFolderWhiteBox(t *testing.T) {
-	f1 := &MyFile{
-		myTreeItem: myTreeItem{
-			name: "f1",
-		},
-	}
-	f2 := &MyFile{
-		myTreeItem: myTreeItem{
-			name: "f2",
-		},
-	}
+func TestMyFolderNaming(t *testing.T) {
+	f1 := NewFile("f1")
+	f2 := NewFile("f2")
 
-	bob := &MyFolder{
-		myTreeItem: myTreeItem{
-			name: "bob",
-		},
-	}
-	bob.AddFileObject(f1)
-	bob.AddFileObject(f2)
+	d1 := NewFolder("d1")
+	d1.AddFileObject(f1)
+	d1.AddFileObject(f2)
 
-	assert.Equal(t, "bob", bob.Name())
-	assert.Equal(t, "/bob", bob.FullName())
-	assert.Equal(t, "/", bob.DirName())
+	assert.Equal(t, "d1", d1.Name())
+	assert.Equal(t, "/d1", d1.FullName())
+	assert.Equal(t, "/", d1.DirName())
 	assert.Equal(t, "f1", f1.Name())
-	assert.Equal(t, "/bob/f1", f1.FullName())
-	assert.Equal(t, "/bob", f1.DirName())
+	assert.Equal(t, "/d1/f1", f1.FullName())
+	assert.Equal(t, "/d1", f1.DirName())
 	assert.Equal(t, "f2", f2.Name())
-	assert.Equal(t, "/bob/f2", f2.FullName())
-	assert.Equal(t, "/bob", f2.DirName())
+	assert.Equal(t, "/d1/f2", f2.FullName())
+	assert.Equal(t, "/d1", f2.DirName())
 
-	joe := MyFolder{
-		myTreeItem: myTreeItem{
-			name: "joe",
-		},
-	}
-	joe.AddFolderObject(bob)
+	d2 := NewFolder("d2")
+	d2.AddFolderObject(d1)
 
-	assert.Equal(t, "joe", joe.Name())
-	assert.Equal(t, "/joe", joe.FullName())
-	assert.Equal(t, "/", joe.DirName())
+	assert.Equal(t, "d2", d2.Name())
+	assert.Equal(t, "/d2", d2.FullName())
+	assert.Equal(t, "/", d2.DirName())
 	assert.Equal(t, "f2", f2.Name())
-	assert.Equal(t, "/joe/bob/f2", f2.FullName())
-	assert.Equal(t, "/joe/bob", f2.DirName())
+	assert.Equal(t, "/d2/d1/f2", f2.FullName())
+	assert.Equal(t, "/d2/d1", f2.DirName())
 }
 
-func TestClean(t *testing.T) {
-	// Just documenting behavior
-	assert.Equal(t, ".", filepath.Clean(".///"))
-	assert.Equal(t, "../..", filepath.Clean("./../../"))
-	assert.Equal(t, "hoser", "./hoser"[2:])
+func TestMyFolderEquals(t *testing.T) {
+	f1 := NewFile("f1")
+	f1Prime := NewFile("f1")
+	f2 := NewFile("f2")
+	f2Prime := NewFile("f2")
+
+	d1 := NewFolder("d1")
+	d1.AddFileObject(f1)
+	d1.AddFileObject(f2)
+
+	d1Prime := NewFolder("d1")
+	d1Prime.AddFileObject(f1Prime)
+	d1Prime.AddFileObject(f2Prime)
+
+	assert.True(t, d1.Equals(d1))
+	assert.True(t, d1.Equals(d1Prime))
+
+	d2 := NewFolder("d2")
+	d2.AddFolderObject(d1)
+	d2Prime := NewFolder("d2")
+	d2Prime.AddFolderObject(d1Prime)
+
+	assert.True(t, d2.Equals(d2))
+	assert.True(t, d2.Equals(d2Prime))
+	assert.False(t, d2.Equals(d1))
 }
 
 func TestLoadFolder(t *testing.T) {
@@ -74,7 +79,7 @@ func TestLoadFolder(t *testing.T) {
 			f, err := LoadFolder(DefaultFsLoader, tc.arg)
 			assert.NoError(t, err)
 			f.Accept(&VisitorDump{})
-			assert.Equal(t, "mdparse", f.name)
+			assert.Equal(t, "mdparse", f.Name())
 		})
 	}
 }

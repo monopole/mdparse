@@ -14,6 +14,10 @@ type MyFolder struct {
 
 var _ MyTreeItem = &MyFolder{}
 
+func NewFolder(n string) *MyFolder {
+	return &MyFolder{myTreeItem: myTreeItem{name: n}}
+}
+
 func (fl *MyFolder) Accept(v TreeVisitor) {
 	v.VisitFolder(fl)
 }
@@ -31,6 +35,55 @@ func (fl *MyFolder) AddFolderObject(folder *MyFolder) {
 func (fl *MyFolder) IsEmpty() bool {
 	return len(fl.files) == 0 && len(fl.dirs) == 0
 }
+
+func (fl *MyFolder) Equals(other *MyFolder) bool {
+	if fl == nil {
+		return other == nil
+	}
+	if other == nil {
+		return false
+	}
+	if fl.name != other.name {
+		return false
+	}
+	if !EqualFileSlice(fl.files, other.files) {
+		return false
+	}
+	return EqualFolderSlice(fl.dirs, other.dirs)
+}
+
+func EqualFileSlice(s1 []*MyFile, s2 []*MyFile) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+	for i := 0; i < len(s1); i++ {
+		if !s1[i].Equals(s2[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func EqualFolderSlice(s1 []*MyFolder, s2 []*MyFolder) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+	for i := 0; i < len(s1); i++ {
+		if !s1[i].Equals(s2[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+//switch t := v.(type) {
+//case string:
+//// t is a string
+//case int :
+//// t is an int
+//default:
+//// t is some other type that we didn't name.
+//}
 
 // LoadFolder loads the folder at the given path.
 func LoadFolder(fsl *FsLoader, path string) (*MyFolder, error) {

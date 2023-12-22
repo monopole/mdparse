@@ -13,7 +13,8 @@ type filter func(info os.FileInfo) bool
 TODO
 
 This is a mess at the moment.
-I think the thing to do is take one argument to the program.
+
+The thing to do is take one argument to the program.
 This arg can be
 
   - an abs path to some file
@@ -42,6 +43,12 @@ This arg can be
   - an empty string
     load the current working directory and call
     the encapsulating folder ".".
+
+To test all this, we need to be able to create MyFile and MyFolder
+instances from strings that contain these paths, and compare them
+to structures built programmatical
+(e.g f = newFile, d = newFolder, d.add(f), etc.)
+so we need some simple Equals methods.
 */
 func MakeTreeItem(fsl *FsLoader, path string) (result MyTreeItem, err error) {
 	if path == "" {
