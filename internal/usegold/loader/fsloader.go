@@ -2,26 +2,29 @@ package loader
 
 import (
 	"fmt"
+	"github.com/spf13/afero"
 	"log/slog"
-	"os"
 	"path/filepath"
 )
 
 // FsLoader navigates and reads a file system.
-// It would be a good place to hold a mockable file system pointer,
-// to remove the dependence on the "os" package.
 type FsLoader struct {
 	IsAllowedFile, IsAllowedFolder filter
+	fs                             *afero.Afero
 }
 
-// DefaultFsLoader is an FsLoader instance configured with
-// default file and folder filters.
-var DefaultFsLoader = &FsLoader{
-	IsAllowedFile:   IsAnAllowedFile,
-	IsAllowedFolder: IsAnAllowedFolder,
+// NewFsLoader returns a file system (FS) loader with default filters.
+// For an in-memory FS, inject afero.NewMemMapFs().
+// For a "real" disk-based system, inject afero.NewOsFs().
+func NewFsLoader(fs afero.Fs) *FsLoader {
+	return &FsLoader{
+		IsAllowedFile:   IsAnAllowedFile,
+		IsAllowedFolder: IsAnAllowedFolder,
+		fs:              &afero.Afero{Fs: fs},
+	}
 }
 
-// LoadFolderFromFs returns a MyFolder instance representing a disk folder.
+// LoadFolderFromFs returns a MyFolder instance representing an FS folder.
 // The arguments are a parent folder, and the simple name of a folder inside
 // the parent (no path separators in the name).
 // The parent's name must be either a full absolute path or a relative
@@ -31,7 +34,7 @@ var DefaultFsLoader = &FsLoader{
 // It returns nil if the folder is empty or has no approved sub-folders or files.
 func (fsl *FsLoader) LoadFolderFromFs(parent *MyFolder, folderName string) (*MyFolder, error) {
 	n := filepath.Join(parent.FullName(), folderName)
-	dirEntries, err := os.ReadDir(n)
+	dirEntries, err := fsl.fs.ReadDir(n)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"unable to read folder %q; %w", n, err)
@@ -43,11 +46,7 @@ func (fsl *FsLoader) LoadFolderFromFs(parent *MyFolder, folderName string) (*MyF
 	fld.parent = parent
 	fld.name = folderName
 	for i := range dirEntries {
-		var info os.FileInfo
-		info, err = dirEntries[i].Info()
-		if err != nil {
-			return nil, err
-		}
+		info := dirEntries[i]
 		if info.IsDir() {
 			if fsl.IsAllowedFolder(info) {
 				var child *MyFolder

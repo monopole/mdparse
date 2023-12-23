@@ -2,6 +2,7 @@ package loader_test
 
 import (
 	. "github.com/monopole/mdparse/internal/usegold/loader"
+	"github.com/spf13/afero"
 	"log/slog"
 	"os"
 
@@ -38,7 +39,7 @@ func TestMakeTreeItemErrors(t *testing.T) {
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			_, err := MakeTreeItem(DefaultFsLoader, tc.arg)
+			_, err := MakeTreeItem(NewFsLoader(afero.NewOsFs()), tc.arg)
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), tc.errMsg)
 		})
@@ -81,7 +82,7 @@ func TestMakeTreeItemHappy(t *testing.T) {
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			f, err := MakeTreeItem(DefaultFsLoader, tc.arg)
+			f, err := MakeTreeItem(NewFsLoader(afero.NewOsFs()), tc.arg)
 			assert.NoError(t, err)
 			f.Accept(&VisitorDump{})
 			assert.Equal(t, tc.topName, f.Name())
@@ -106,7 +107,7 @@ func TestMakeTreeItemRepo(t *testing.T) {
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			f, err := MakeTreeItem(DefaultFsLoader, tc.arg)
+			f, err := MakeTreeItem(NewFsLoader(afero.NewOsFs()), tc.arg)
 			assert.NoError(t, err)
 			f.Accept(&VisitorDump{})
 			assert.Equal(t, tc.topName, f.Name())

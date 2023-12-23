@@ -2,6 +2,7 @@ package loader
 
 import (
 	"fmt"
+	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +44,7 @@ func MakeTreeItem(fsl *FsLoader, path string) (result MyTreeItem, err error) {
 		return
 	}
 	if fsl == nil {
-		fsl = DefaultFsLoader
+		fsl = NewFsLoader(afero.NewOsFs())
 	}
 	if smellsLikeGithubCloneArg(path) {
 		return absorbRepo(fsl, path)

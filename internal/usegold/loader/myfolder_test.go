@@ -2,6 +2,7 @@ package loader_test
 
 import (
 	. "github.com/monopole/mdparse/internal/usegold/loader"
+	"github.com/spf13/afero"
 
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -75,7 +76,7 @@ func TestLoadFolder(t *testing.T) {
 		//},
 	} {
 		t.Run(n, func(t *testing.T) {
-			f, err := LoadFolder(DefaultFsLoader, tc.arg)
+			f, err := LoadFolder(NewFsLoader(afero.NewOsFs()), tc.arg)
 			assert.NoError(t, err)
 			f.Accept(&VisitorDump{})
 			assert.Equal(t, "mdparse", f.Name())
