@@ -87,7 +87,7 @@ func TestLoadFolderFromFsHappy(t *testing.T) {
 			f, err := l.LoadFolderFromFs(folder, tc.path)
 			assert.NoError(t, err)
 			assert.NotNil(t, f)
-			f.Accept(&VisitorDump{})
+			f.Accept(NewVisitorDump(l))
 		})
 	}
 }

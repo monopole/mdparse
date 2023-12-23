@@ -24,6 +24,21 @@ func NewFsLoader(fs afero.Fs) *FsLoader {
 	}
 }
 
+// Read returns the contents of a file.
+func (fsl *FsLoader) Read(fi *MyFile) ([]byte, error) {
+	return fsl.fs.ReadFile(fi.FullName())
+	//// myErrFile returns "fake" markdown file showing an error message.
+	//func myErrFile(path string, err error) (*MyFile, error) {
+	//	return &MyFile{
+	//		myTreeItem: myTreeItem{
+	//			parent: nil,
+	//			name:   path,
+	//		},
+	//		content: []byte(fmt.Sprintf("## Unable to load from %s; %s", path, err.Error())),
+	//	}, err
+	//}
+}
+
 // LoadFolderFromFs returns a MyFolder instance representing an FS folder.
 // The arguments are a parent folder, and the simple name of a folder inside
 // the parent (no path separators in the name).

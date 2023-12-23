@@ -9,6 +9,14 @@ import (
 
 type VisitorDump struct {
 	indent int
+	fsl    *FsLoader
+}
+
+func NewVisitorDump(fsl *FsLoader) *VisitorDump {
+	return &VisitorDump{
+		indent: 0,
+		fsl:    fsl,
+	}
 }
 
 const blanks = "                                                                "
@@ -42,7 +50,7 @@ func (v *VisitorDump) VisitFile(fi *MyFile) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Print(fi.name)
 	fmt.Print(" : ")
-	c, err := fi.Contents()
+	c, err := v.fsl.Read(fi)
 	if err != nil {
 		fmt.Println(err.Error())
 		return

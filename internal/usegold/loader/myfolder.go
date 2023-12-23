@@ -179,10 +179,10 @@ func (fl *MyFolder) loadFileFromFs(name string) error {
 			name:   name,
 		},
 	}
-	// Do a test read.
-	if _, err := fi.Contents(); err != nil {
-		return err
-	}
+	// Do a test read.  inject FsLoader
+	//if _, err := fi.Contents(); err != nil {
+	//	return err
+	//}
 	fl.files = append(fl.files, &fi)
 	return nil
 }
