@@ -37,6 +37,10 @@ func (r *MyRepo) Parent() MyTreeItem {
 	return nil
 }
 
+func (r *MyRepo) Root() MyTreeItem {
+	return r
+}
+
 func (r *MyRepo) FullName() string {
 	return r.name
 }

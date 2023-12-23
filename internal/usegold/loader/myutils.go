@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+type filter func(info os.FileInfo) bool
+
 func FSplit(path string) (string, string) {
 	dir, name := filepath.Split(path)
 	return stripTrailingSlash(dir), name

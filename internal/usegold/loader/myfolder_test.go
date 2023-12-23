@@ -7,9 +7,16 @@ import (
 	"testing"
 )
 
+var (
+	f1      = NewFile("f1")
+	f1Prime = NewFile("f1")
+	f2      = NewFile("f2")
+	f2Prime = NewFile("f2")
+)
+
 func TestMyFolderNaming(t *testing.T) {
-	f1 := NewFile("f1")
-	f2 := NewFile("f2")
+	f1 = NewFile("f1")
+	f2 = NewFile("f2")
 
 	d1 := NewFolder("d1")
 	d1.AddFileObject(f1)
@@ -37,10 +44,6 @@ func TestMyFolderNaming(t *testing.T) {
 }
 
 func TestMyFolderEquals(t *testing.T) {
-	f1 := NewFile("f1")
-	f1Prime := NewFile("f1")
-	f2 := NewFile("f2")
-	f2Prime := NewFile("f2")
 
 	d1 := NewFolder("d1")
 	d1.AddFileObject(f1)
