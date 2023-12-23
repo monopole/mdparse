@@ -85,26 +85,6 @@ func EqualFolderSlice(s1 []*MyFolder, s2 []*MyFolder) bool {
 //// t is some other type that we didn't name.
 //}
 
-// LoadFolder loads the folder at the given path.
-func LoadFolder(fsl *FsLoader, path string) (*MyFolder, error) {
-	// First create a parent tree.
-	// If the path is an absolute path, the parent folder is named "/",
-	// and has a nil parent.
-	// If the path is a relative path, the parent folder is named "",
-	//
-
-	var placeholder MyFolder
-	dir, name := filepath.Split(path)
-	if dir != "" && dir != string(filepath.Separator) {
-	}
-	folder := &placeholder
-	if dir != "" {
-		// Create a chain of placeholder parents...
-		folder = placeholder.buildParentTree(dir)
-	}
-	return fsl.loadFolderFromFs(folder, name)
-}
-
 func (fl *MyFolder) buildParentTree(path string) *MyFolder {
 	dir, name := filepath.Split(path)
 	folder := fl
@@ -155,7 +135,7 @@ func (fl *MyFolder) AbsorbFolderFromDisk(ts *FsLoader, path string) error {
 	if dir != "" {
 		folder = fl.buildParentTree(dir)
 	}
-	child, err := ts.loadFolderFromFs(folder, name)
+	child, err := ts.LoadFolderFromFs(folder, name)
 	if err != nil {
 		return err
 	}
@@ -165,6 +145,26 @@ func (fl *MyFolder) AbsorbFolderFromDisk(ts *FsLoader, path string) error {
 	return nil
 }
 
+// LoadFolder loads the folder found at the given path.
+// The returned folder object will have files and sub-folders,
+// but won't have a parent, and won't know where it was loaded from.
+func LoadFolder(fsl *FsLoader, path string) (*MyFolder, error) {
+	// First create a parent tree.
+	// If the path is an absolute path, the parent folder is named "/",
+	// and has a nil parent.
+	// If the path is a relative path, the parent folder is named "",
+	//
+	var placeholder MyFolder
+	dir, name := filepath.Split(path)
+	if dir != "" && dir != string(filepath.Separator) {
+	}
+	folder := &placeholder
+	if dir != "" {
+		// Create a chain of placeholder parents...
+		folder = placeholder.buildParentTree(dir)
+	}
+	return fsl.LoadFolderFromFs(folder, name)
+}
 func (fl *MyFolder) loadFileFromFs(name string) error {
 	slog.Debug("adding   FILE", "name", name, "parent", fl.FullName())
 	for _, fi := range fl.files {

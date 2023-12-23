@@ -28,7 +28,7 @@ func TestExtractGithubRepoName(t *testing.T) {
 			} {
 				arg := makeTheTestArgument(repoName, pathName, tstFmt)
 				if !smellsLikeGithubCloneArg(arg) {
-					t.Errorf("Should smell like github arg: %s\n", arg)
+					t.Errorf("Should smell like github path: %s\n", arg)
 					continue
 				}
 				repo, path, err := extractGithubRepoName(arg)

@@ -21,12 +21,15 @@ var DefaultFsLoader = &FsLoader{
 	IsAllowedFolder: IsAnAllowedFolder,
 }
 
-// loadFolderFromFs accepts a folderName and a fully formed parent folder.
-// The parent must be fully formed as this allows the folderName to be located.
-// It assumes that the folderName is approved/desirable.  It returns a
-// new folder object, loaded with all approved sub-folders and their files.
+// LoadFolderFromFs returns a MyFolder instance representing a disk folder.
+// The arguments are a parent folder, and the simple name of a folder inside
+// the parent (no path separators in the name).
+// The parent's name must be either a full absolute path or a relative
+// path that makes sense with respect to the process's working directory.
+// It returns a new folder object, loaded with all approved sub-folders
+// and their files.
 // It returns nil if the folder is empty or has no approved sub-folders or files.
-func (fsl *FsLoader) loadFolderFromFs(parent *MyFolder, folderName string) (*MyFolder, error) {
+func (fsl *FsLoader) LoadFolderFromFs(parent *MyFolder, folderName string) (*MyFolder, error) {
 	n := filepath.Join(parent.FullName(), folderName)
 	dirEntries, err := os.ReadDir(n)
 	if err != nil {
@@ -48,7 +51,7 @@ func (fsl *FsLoader) loadFolderFromFs(parent *MyFolder, folderName string) (*MyF
 		if info.IsDir() {
 			if fsl.IsAllowedFolder(info) {
 				var child *MyFolder
-				child, err = fsl.loadFolderFromFs(&fld, info.Name())
+				child, err = fsl.LoadFolderFromFs(&fld, info.Name())
 				if err != nil {
 					return nil, err
 				}

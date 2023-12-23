@@ -13,21 +13,6 @@ type VisitorDump struct {
 
 const blanks = "                                                                "
 
-func (v *VisitorDump) VisitContrivedFolder(f *MyContrivedFolder) {
-	fmt.Printf("%s\n", f.name)
-	fmt.Println("--- Origins ---")
-	v.indent += 2
-	fmt.Println("--- Repositories ---")
-	for i := range f.repos {
-		v.VisitRepo(f.repos[i])
-	}
-	fmt.Println("--- Absolute Tree ---")
-	v.VisitFolder(f.folderAbs)
-	fmt.Println("--- Process Relative Tree ---")
-	v.VisitFolder(f.folderRel)
-	v.indent -= 2
-}
-
 func (v *VisitorDump) VisitRepo(r *MyRepo) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Printf("%s %s is in %s\n", r.name, r.path, r.tmpDir)

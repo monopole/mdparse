@@ -15,9 +15,6 @@ var (
 )
 
 func TestMyFolderNaming(t *testing.T) {
-	f1 = NewFile("f1")
-	f2 = NewFile("f2")
-
 	d1 := NewFolder("d1")
 	d1.AddFileObject(f1)
 	d1.AddFileObject(f2)
@@ -44,7 +41,6 @@ func TestMyFolderNaming(t *testing.T) {
 }
 
 func TestMyFolderEquals(t *testing.T) {
-
 	d1 := NewFolder("d1")
 	d1.AddFileObject(f1)
 	d1.AddFileObject(f2)
@@ -72,10 +68,10 @@ func TestLoadFolder(t *testing.T) {
 	}
 	for n, tc := range map[string]testC{
 		//"t1": {
-		//	arg: "/home/jregan/myrepos/github.com/monopole/mdparse",
+		//	path: "/home/jregan/myrepos/github.com/monopole/mdparse",
 		//},
 		//"t2": {
-		//	arg: ".",
+		//	path: ".",
 		//},
 	} {
 		t.Run(n, func(t *testing.T) {
