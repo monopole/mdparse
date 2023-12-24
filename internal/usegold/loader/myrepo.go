@@ -53,7 +53,7 @@ func (r *MyRepo) Name() string {
 	return r.name
 }
 
-func (r *MyRepo) Init(tb *FsLoader) (err error) {
+func (r *MyRepo) Init(fsl *FsLoader) (err error) {
 	r.CleanUp()
 	r.tmpDir, err = cloneRepo(r.name)
 	if err != nil {
@@ -64,16 +64,23 @@ func (r *MyRepo) Init(tb *FsLoader) (err error) {
 	if len(r.path) > 0 {
 		base = filepath.Join(base, r.path)
 	}
-	//fmt.Printf("r.tmpDir = %s\n", r.tmpDir)
-	//fmt.Printf("  r.path = %s\n", r.path)
-	//fmt.Printf("    base = %s\n", base)
-	//fmt.Printf("     dir = %s\n", dir)
+	slog.Debug("", "r.tmpDir", r.tmpDir)
+	slog.Debug("", "r.path", r.path)
+	slog.Debug("", "base", base)
+	slog.Debug("", "dir", dir)
+
 	r.folder = &MyFolder{
 		myTreeItem: myTreeItem{
-			name: dir,
+			name: base,
 		},
 	}
-	return r.folder.AbsorbFolderFromDisk(tb, base)
+	var sub *MyFolder
+	sub, err = fsl.LoadSubFolder(r.folder, dir)
+	if err != nil {
+		return
+	}
+	r.folder.dirs = append(r.folder.dirs, sub)
+	return nil
 }
 
 func cloneRepo(repoName string) (string, error) {

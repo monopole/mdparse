@@ -10,105 +10,112 @@ import (
 	"time"
 )
 
-// Demo how this works.
+// Demo the difference between filepath.Split and FSplit.
 func TestFsSplit(t *testing.T) {
+	type result struct {
+		d  string
+		fn string
+	}
 	type testC struct {
 		arg string
-		d   string
-		fn  string
+		r1  *result
+		r2  *result
 	}
 	for n, tc := range map[string]testC{
 		"t1": {
-			arg: "/home/aaa/bbb",
-			d:   "/home/aaa/",
-			fn:  "bbb",
+			arg: "/aaa/bbb/ccc",
+			r1: &result{
+				d:  "/aaa/bbb/",
+				fn: "ccc",
+			},
+			r2: &result{
+				d:  "/aaa/bbb",
+				fn: "ccc",
+			},
 		},
 		"t2": {
 			arg: "/bbb",
-			d:   "/",
-			fn:  "bbb",
+			r1: &result{
+				d:  "/",
+				fn: "bbb",
+			},
 		},
 		"t3": {
 			arg: "bbb",
-			d:   "",
-			fn:  "bbb",
+			r1: &result{
+				d:  "",
+				fn: "bbb",
+			},
 		},
 		"t4": {
 			arg: "",
-			d:   "",
-			fn:  "",
+			r1: &result{
+				d:  "",
+				fn: "",
+			},
 		},
 		"t5": {
 			arg: "/",
-			d:   "/",
-			fn:  "",
+			r1: &result{
+				d:  "/",
+				fn: "",
+			},
 		},
 		"t6": {
-			arg: ".",
-			d:   "",
-			fn:  ".", // odd
+			arg: "./bob/sally",
+			r1: &result{
+				d:  "./bob/",
+				fn: "sally",
+			},
+			r2: &result{
+				d:  "bob",
+				fn: "sally",
+			},
 		},
 		"t7": {
+			arg: "./bob",
+			r1: &result{
+				d:  "./",
+				fn: "bob",
+			},
+			r2: &result{
+				d:  "",
+				fn: "bob",
+			},
+		},
+		"t8": {
+			arg: ".",
+			r1: &result{
+				d:  "",
+				fn: ".", // odd
+			},
+			r2: &result{
+				d:  "",
+				fn: "",
+			},
+		},
+		"t9": {
 			arg: "./",
-			d:   "./",
-			fn:  "",
+			r1: &result{
+				d:  "./",
+				fn: "",
+			},
+			r2: &result{
+				d:  "",
+				fn: "",
+			},
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
 			d, fn := filepath.Split(tc.arg)
-			assert.Equal(t, tc.d, d)
-			assert.Equal(t, tc.fn, fn)
-		})
-	}
-}
-
-func TestMyFSplit(t *testing.T) {
-	type testC struct {
-		arg string
-		d   string
-		fn  string
-	}
-	for n, tc := range map[string]testC{
-		"t1": {
-			arg: "/home/aaa/bbb",
-			d:   "/home/aaa",
-			fn:  "bbb",
-		},
-		"t2": {
-			arg: "/bbb",
-			d:   "",
-			fn:  "bbb",
-		},
-		"t3": {
-			arg: "bbb",
-			d:   "",
-			fn:  "bbb",
-		},
-		"t4": {
-			arg: "",
-			d:   "",
-			fn:  "",
-		},
-		"t5": {
-			arg: "/",
-			d:   "",
-			fn:  "",
-		},
-		"t6": {
-			arg: ".",
-			d:   "",
-			fn:  ".",
-		},
-		"t7": {
-			arg: "./",
-			d:   ".",
-			fn:  "",
-		},
-	} {
-		t.Run(n, func(t *testing.T) {
-			d, fn := FSplit(tc.arg)
-			assert.Equal(t, tc.d, d)
-			assert.Equal(t, tc.fn, fn)
+			assert.Equal(t, tc.r1.d, d)
+			assert.Equal(t, tc.r1.fn, fn)
+			d, fn = FSplit(tc.arg)
+			if tc.r2 == nil {
+				tc.r2 = tc.r1 // same result
+			}
+			assert.Equal(t, tc.r2.d, d)
+			assert.Equal(t, tc.r2.fn, fn)
 		})
 	}
 }
@@ -128,58 +135,58 @@ func (m *mockFileInfo) Sys() any           { panic("didn't think Sys was needed"
 var _ os.FileInfo = &mockFileInfo{}
 
 type tCase struct {
-	fi      *mockFileInfo
-	allowed bool
+	fi  *mockFileInfo
+	err error
 }
 
-func TestIsAnAllowedFile(t *testing.T) {
+func TestIsMarkDownFile(t *testing.T) {
 	for n, tc := range map[string]tCase{
 		"t1": {
 			fi: &mockFileInfo{
 				name: "aDirectory.md",
 				mode: fs.ModeDir,
 			},
+			err: NotMarkDownErr,
 		},
 		"t2": {
 			fi: &mockFileInfo{
 				name: "notMarkdown",
 			},
+			err: NotMarkDownErr,
 		},
 		"t3": {
 			fi: &mockFileInfo{
 				name: "aFile.md",
 			},
-			allowed: true,
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			assert.Equal(t, tc.allowed, IsAnAllowedFile(tc.fi))
+			assert.Equal(t, tc.err, IsMarkDownFile(tc.fi))
 		})
 	}
 }
 
-func TestIsAnAllowedFolder(t *testing.T) {
+func TestIsNotADotDir(t *testing.T) {
 	for n, tc := range map[string]tCase{
 		"t1": {
 			fi: &mockFileInfo{
 				name: ".git",
 			},
+			err: IsADotDirErr,
 		},
 		"t2": {
 			fi: &mockFileInfo{
 				name: "./",
 			},
-			allowed: true,
 		},
 		"t3": {
 			fi: &mockFileInfo{
 				name: "..",
 			},
-			allowed: true,
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			assert.Equal(t, tc.allowed, IsAnAllowedFolder(tc.fi))
+			assert.Equal(t, tc.err, IsNotADotDir(tc.fi))
 		})
 	}
 }

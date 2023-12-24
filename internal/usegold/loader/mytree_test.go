@@ -31,7 +31,7 @@ func TestMakeTreeItemErrors(t *testing.T) {
 	for n, tc := range map[string]testC{
 		"t1": {
 			arg:    "/etc/passwd",
-			errMsg: "not a markdown file",
+			errMsg: "not a simple markdown file",
 		},
 		"t2": {
 			arg:    "/etc",
@@ -54,11 +54,11 @@ func TestMakeTreeItemHappy(t *testing.T) {
 	for n, tc := range map[string]testC{
 		"t1": {
 			arg:     "fart.md",
-			topName: "/",
+			topName: "",
 		},
 		"t2": {
 			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
-			topName: "/",
+			topName: "",
 		},
 		"t3": {
 			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse",

@@ -50,7 +50,7 @@ func TestLoadFolderFromFsSad(t *testing.T) {
 	} {
 		t.Run(n, func(t *testing.T) {
 			parent := NewFolder(tc.root)
-			_, err := l.LoadFolderFromFs(parent, tc.path)
+			_, err := l.LoadSubFolder(parent, tc.path)
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), tc.errMsg)
 		})
@@ -84,7 +84,7 @@ func TestLoadFolderFromFsHappy(t *testing.T) {
 	} {
 		t.Run(n, func(t *testing.T) {
 			folder := NewFolder(tc.root)
-			f, err := l.LoadFolderFromFs(folder, tc.path)
+			f, err := l.LoadSubFolder(folder, tc.path)
 			assert.NoError(t, err)
 			assert.NotNil(t, f)
 			f.Accept(NewVisitorDump(l))

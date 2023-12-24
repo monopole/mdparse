@@ -3,7 +3,11 @@ package loader
 // MyFile is named byte array.
 type MyFile struct {
 	myTreeItem
-	// content []byte
+	// content []byte ?  yes probably put this back as a reload should
+	// just start frrom scratch - the original arg string
+	// so its not a reloadd so much as a load afresh, possibly with
+	//  a new arg.  also the repo should be loaded into memory
+	// and temp space deleted each time.
 }
 
 var _ MyTreeItem = &MyFile{}
