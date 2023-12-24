@@ -106,7 +106,7 @@ func (ti *myTreeItem) FullName() string {
 		return string(filepath.Separator)
 	}
 	if ti.parent == nil {
-		return string(filepath.Separator) + ti.name
+		return ti.name
 	}
 	return filepath.Join(ti.parent.FullName(), ti.name)
 }
@@ -116,7 +116,7 @@ func (ti *myTreeItem) DirName() string {
 		return "{ERROR}"
 	}
 	if ti.parent == nil {
-		return string(filepath.Separator)
+		return ""
 	}
 	return ti.parent.FullName()
 }

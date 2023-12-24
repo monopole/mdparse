@@ -55,10 +55,12 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 		return
 	}
 	dir, name := FSplit(cleanPath)
+	if dir == "" {
+		dir = "."
+	}
 	fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
 	if info.IsDir() {
-		err = fsl.IsAllowedFolder(info)
-		if err != nil {
+		if err = fsl.IsAllowedFolder(info); err != nil {
 			err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
 			return
 		}
@@ -67,15 +69,14 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 		if err != nil {
 			return
 		}
-		fld.dirs = append(fld.dirs, sub)
+		fld.AddFolderObject(sub)
 		return
 	}
-	err = fsl.IsAllowedFile(info)
-	if err != nil {
+	if err = fsl.IsAllowedFile(info); err != nil {
 		err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
 		return
 	}
-	fld.files = append(fld.files, NewFile(name))
+	fld.AddFileObject(NewFile(name))
 	return
 }
 

@@ -19,24 +19,24 @@ func TestMyFolderNaming(t *testing.T) {
 	d1.AddFileObject(f2)
 
 	assert.Equal(t, "d1", d1.Name())
-	assert.Equal(t, "/d1", d1.FullName())
-	assert.Equal(t, "/", d1.DirName())
+	assert.Equal(t, "d1", d1.FullName())
+	assert.Equal(t, "", d1.DirName())
 	assert.Equal(t, "f1", f1.Name())
-	assert.Equal(t, "/d1/f1", f1.FullName())
-	assert.Equal(t, "/d1", f1.DirName())
+	assert.Equal(t, "d1/f1", f1.FullName())
+	assert.Equal(t, "d1", f1.DirName())
 	assert.Equal(t, "f2", f2.Name())
-	assert.Equal(t, "/d1/f2", f2.FullName())
-	assert.Equal(t, "/d1", f2.DirName())
+	assert.Equal(t, "d1/f2", f2.FullName())
+	assert.Equal(t, "d1", f2.DirName())
 
 	d2 := NewFolder("d2")
 	d2.AddFolderObject(d1)
 
 	assert.Equal(t, "d2", d2.Name())
-	assert.Equal(t, "/d2", d2.FullName())
-	assert.Equal(t, "/", d2.DirName())
+	assert.Equal(t, "d2", d2.FullName())
+	assert.Equal(t, "", d2.DirName())
 	assert.Equal(t, "f2", f2.Name())
-	assert.Equal(t, "/d2/d1/f2", f2.FullName())
-	assert.Equal(t, "/d2/d1", f2.DirName())
+	assert.Equal(t, "d2/d1/f2", f2.FullName())
+	assert.Equal(t, "d2/d1", f2.DirName())
 }
 
 func TestMyFolderEquals(t *testing.T) {

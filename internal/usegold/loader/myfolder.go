@@ -2,6 +2,7 @@ package loader
 
 import (
 	"log/slog"
+	"path/filepath"
 )
 
 // MyFolder is a named group of files and folders.
@@ -33,6 +34,10 @@ func (fl *MyFolder) AddFolderObject(folder *MyFolder) {
 
 func (fl *MyFolder) IsEmpty() bool {
 	return len(fl.files) == 0 && len(fl.dirs) == 0
+}
+
+func (fl *MyFolder) IsRoot() bool {
+	return fl.name == string(filepath.Separator)
 }
 
 func (fl *MyFolder) Equals(other *MyFolder) bool {

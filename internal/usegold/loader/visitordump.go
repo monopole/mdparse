@@ -32,7 +32,7 @@ func (v *VisitorDump) VisitRepo(r *MyRepo) {
 func (v *VisitorDump) VisitFolder(fl *MyFolder) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Print(fl.name)
-	if fl.name != string(filepath.Separator) {
+	if !fl.IsRoot() {
 		fmt.Print(string(filepath.Separator))
 	}
 	fmt.Println()

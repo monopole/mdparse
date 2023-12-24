@@ -1,6 +1,7 @@
 package loader_test
 
 import (
+	"fmt"
 	. "github.com/monopole/mdparse/internal/usegold/loader"
 	"github.com/spf13/afero"
 	"log/slog"
@@ -47,6 +48,15 @@ func TestMakeTreeItemErrors(t *testing.T) {
 }
 
 func TestMakeTreeItemHappy(t *testing.T) {
+	{
+		var cwd string
+		var err error
+		cwd, err = os.Getwd()
+		if err != nil {
+			return
+		}
+		fmt.Println("cwd of test =", cwd)
+	}
 	type testC struct {
 		arg     string
 		topName string
@@ -54,38 +64,40 @@ func TestMakeTreeItemHappy(t *testing.T) {
 	for n, tc := range map[string]testC{
 		"t1": {
 			arg:     "fart.md",
-			topName: "",
+			topName: ".",
 		},
 		"t2": {
 			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/fart.md",
-			topName: "",
+			topName: "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader",
 		},
 		"t3": {
 			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse",
-			topName: "/",
+			topName: "/home/jregan/myrepos/github.com/monopole",
 		},
 		"t4": {
 			arg:     "/home/jregan/myrepos/github.com/monopole/mdrip",
-			topName: "/",
+			topName: "/home/jregan/myrepos/github.com/monopole",
 		},
 		"t5": {
 			arg:     "/home/jregan/myrepos/github.com/monopole/mdrip/README.md",
-			topName: "/",
-		},
-		"t6": {
-			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse",
-			topName: "/",
+			topName: "/home/jregan/myrepos/github.com/monopole/mdrip",
 		},
 		"t7": {
 			arg:     ".",
-			topName: "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader",
+			topName: ".",
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			f, err := MakeTreeItem(NewFsLoader(afero.NewOsFs()), tc.arg)
+			fsl := NewFsLoader(afero.NewOsFs())
+			f, err := MakeTreeItem(fsl, tc.arg)
+			if err == nil {
+				fmt.Println("no error!")
+			} else {
+				fmt.Println("err: ", err.Error())
+			}
 			assert.NoError(t, err)
-			f.Accept(&VisitorDump{})
 			assert.Equal(t, tc.topName, f.Name())
+			f.Accept(NewVisitorDump(fsl))
 		})
 	}
 }
@@ -107,9 +119,10 @@ func TestMakeTreeItemRepo(t *testing.T) {
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			f, err := MakeTreeItem(NewFsLoader(afero.NewOsFs()), tc.arg)
+			fsl := NewFsLoader(afero.NewOsFs())
+			f, err := MakeTreeItem(fsl, tc.arg)
 			assert.NoError(t, err)
-			f.Accept(&VisitorDump{})
+			f.Accept(NewVisitorDump(fsl))
 			assert.Equal(t, tc.topName, f.Name())
 			// f.Cleanup()
 		})
