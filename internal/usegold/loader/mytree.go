@@ -2,7 +2,6 @@ package loader
 
 import (
 	"fmt"
-	"github.com/spf13/afero"
 	"path/filepath"
 	"strings"
 )
@@ -43,7 +42,8 @@ func MakeTreeItem(fsl *FsLoader, path string) (result MyTreeItem, err error) {
 		return
 	}
 	if fsl == nil {
-		fsl = NewFsLoader(afero.NewOsFs())
+		err = fmt.Errorf("need a File System loader")
+		return
 	}
 	if smellsLikeGithubCloneArg(path) {
 		return absorbRepo(fsl, path)
@@ -68,10 +68,8 @@ func absorbRepo(fsl *FsLoader, arg string) (*MyRepo, error) {
 		name: n,
 		path: p,
 	}
-	if err = r.Init(fsl); err != nil {
-		return nil, err
-	}
-	return r, nil
+	err = r.Init(fsl)
+	return r, err
 }
 
 func (ti *myTreeItem) IsRoot() bool {

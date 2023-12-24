@@ -91,3 +91,38 @@ func TestLoadFolderFromFsHappy(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadFolderFromMemory(t *testing.T) {
+	type testC struct {
+		fs       func() afero.Fs
+		path     string
+		expected func() *MyFolder
+	}
+	for n, tc := range map[string]testC{
+		"t1": {
+			fs: func() afero.Fs {
+				appFS := afero.NewMemMapFs()
+				assert.NoError(t, appFS.MkdirAll("src/a", 0755))
+				assert.NoError(t, afero.WriteFile(appFS, "src/a/b", []byte("file b"), 0644))
+				assert.NoError(t, afero.WriteFile(appFS, "src/c", []byte("file c"), 0644))
+				return appFS
+			},
+			path: "/home/jregan/myrepos/github.com/monopole",
+			expected: func() *MyFolder {
+				f1 := NewFile("f1")
+				d1 := NewFolder("d1")
+				d1.AddFileObject(f1)
+				return d1
+			},
+		},
+	} {
+		t.Run(n, func(t *testing.T) {
+			l := NewFsLoader(tc.fs())
+			f, err := l.LoadFolder(tc.path)
+			f.Accept(NewVisitorDump(l))
+			assert.NoError(t, err)
+			assert.NotNil(t, f)
+			assert.True(t, tc.expected().Equals(f))
+		})
+	}
+}

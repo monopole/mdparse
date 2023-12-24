@@ -103,7 +103,7 @@ func TestMakeTreeItemHappy(t *testing.T) {
 }
 
 func TestMakeTreeItemRepo(t *testing.T) {
-	// turnOnDebugging()
+	turnOnDebugging()
 	type testC struct {
 		arg     string
 		topName string
