@@ -60,7 +60,7 @@ func IsMarkDownFile(info os.FileInfo) error {
 	return nil
 }
 
-var IsADotDirErr = fmt.Errorf("not folder we can use")
+var IsADotDirErr = fmt.Errorf("not allowed to load from dot folder")
 
 // IsNotADotDir passes non dot directories (not .git, not .config, etc.)
 func IsNotADotDir(info os.FileInfo) error {
@@ -70,7 +70,8 @@ func IsNotADotDir(info os.FileInfo) error {
 		return nil
 	}
 	// Ignore .git, etc.
-	if strings.HasPrefix(filepath.Base(n), ".") {
+	base := filepath.Base(n)
+	if len(base) > 1 && string(base[0]) == "." {
 		return IsADotDirErr
 	}
 	return nil

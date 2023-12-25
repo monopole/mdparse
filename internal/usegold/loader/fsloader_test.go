@@ -9,31 +9,6 @@ import (
 	"testing"
 )
 
-// TODO: make lots more tests
-// var AppFs = afero.NewMemMapFs()
-//
-// or
-//
-// var AppFs = afero.NewOsFs()
-// then
-//    os.Open("/tmp/foo")
-// becomes
-//     AppFs.Open("/tmp/foo")
-//
-
-func TestExist(t *testing.T) {
-	appFS := afero.NewMemMapFs()
-	// create test files and directories
-	assert.NoError(t, appFS.MkdirAll("src/a", 0755))
-	assert.NoError(t, afero.WriteFile(appFS, "src/a/b", []byte("file b"), 0644))
-	assert.NoError(t, afero.WriteFile(appFS, "src/c", []byte("file c"), 0644))
-	name := "src/c"
-	_, err := appFS.Stat(name)
-	if os.IsNotExist(err) {
-		t.Errorf("file \"%s\" does not exist.\n", name)
-	}
-}
-
 func TestLoadFolderFromFsSad(t *testing.T) {
 	type testC struct {
 		root   string
@@ -87,42 +62,167 @@ func TestLoadFolderFromFsHappy(t *testing.T) {
 			f, err := l.LoadSubFolder(folder, tc.path)
 			assert.NoError(t, err)
 			assert.NotNil(t, f)
-			f.Accept(NewVisitorDump(l))
+			folder.Accept(NewVisitorDump(l))
 		})
 	}
 }
 
-func TestLoadFolderFromMemory(t *testing.T) {
+// Permission bits
+// The file or folder's owner:
+// 400      Read
+// 200      Write
+// 100      Execute/search
+//
+//	        Other users in the file or folder's group:
+//	40      Read
+//	20      Write
+//	10      Execute/search
+//
+//	        Other users not in the group:
+//	 4      Read
+//	 2      Write
+//	 1      Execute/search
+const (
+	RW  os.FileMode = 0644
+	RWX os.FileMode = 0755
+)
+
+var (
+	m0, m1, m2, m3 = NewFile("m0.md"),
+		NewFile("m1.md"), NewFile("m2.md"), NewFile("m3.md")
+	m0C, m1C, m2C, m3C = []byte("# m0"),
+		[]byte("# m1"), []byte("# m2"), []byte("# m3")
+)
+
+func makeInterestingFs(t *testing.T, fs afero.Fs) {
+	// WriteFile creates folders as needed.
+	assert.NoError(t, afero.WriteFile(fs, "/m0.md", m0C, RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/bbb/m1.md", m1C, RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/m2.md", m2C, RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/ccc/m3.md", m3C, RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/ccc/ignore", []byte("not markdown"), RW))
+	assert.NoError(t, fs.MkdirAll("/aaa/empty", RWX))
+}
+
+func TestLoadFolderFromMemoryHappy(t *testing.T) {
 	type testC struct {
-		fs       func() afero.Fs
-		path     string
-		expected func() *MyFolder
+		fillFs      func(*testing.T, afero.Fs)
+		pathToLoad  string
+		expectedFld func() *MyFolder
+		errMsg      string
 	}
 	for n, tc := range map[string]testC{
-		"t1": {
-			fs: func() afero.Fs {
-				appFS := afero.NewMemMapFs()
-				assert.NoError(t, appFS.MkdirAll("src/a", 0755))
-				assert.NoError(t, afero.WriteFile(appFS, "src/a/b", []byte("file b"), 0644))
-				assert.NoError(t, afero.WriteFile(appFS, "src/c", []byte("file c"), 0644))
-				return appFS
+		"nothingOk": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				// don't make any files.
 			},
-			path: "/home/jregan/myrepos/github.com/monopole",
-			expected: func() *MyFolder {
-				f1 := NewFile("f1")
-				d1 := NewFolder("d1")
-				d1.AddFileObject(f1)
-				return d1
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				return NewFolder("/")
 			},
+		},
+		"nothingWithError": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				// don't make any files.
+			},
+			pathToLoad: "/a.md",
+			errMsg:     "file does not exist",
+		},
+		"oneFile": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				assert.NoError(tt, afero.WriteFile(fs, "/m1.md", m1C, RW))
+			},
+			pathToLoad: "/m1.md",
+			expectedFld: func() *MyFolder {
+				return NewFolder("/").AddFileObject(m1)
+			},
+		},
+		"oneFileButAskForWrongFile": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				assert.NoError(tt, afero.WriteFile(fs, "/m1.md", m1C, RW))
+			},
+			pathToLoad: "/m2.md",
+			errMsg:     "file does not exist",
+		},
+		"oneEmptyFolder": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				assert.NoError(t, fs.MkdirAll("/aaa", RWX))
+			},
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				return NewFolder("/")
+			},
+		},
+		"oneEmptyFolderAgain": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				assert.NoError(t, fs.MkdirAll("/aaa", RWX))
+			},
+			pathToLoad: "/aaa",
+			expectedFld: func() *MyFolder {
+				return NewFolder("/")
+			},
+		},
+		"justOneDir": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				assert.NoError(tt, afero.WriteFile(fs, "/aaa/m1.md", m1C, RW))
+			},
+			pathToLoad: "/aaa",
+			expectedFld: func() *MyFolder {
+				return NewFolder("/").AddFolderObject(NewFolder("aaa")).AddFileObject(m1)
+			},
+		},
+		"justAAA": {
+			fillFs:     makeInterestingFs,
+			pathToLoad: "/aaa",
+			expectedFld: func() *MyFolder {
+				ccc := NewFolder("ccc").AddFileObject(m3)
+				bbb := NewFolder("bbb").AddFileObject(m1)
+				aaa := NewFolder("aaa").AddFileObject(m2).
+					AddFolderObject(bbb).AddFolderObject(ccc)
+				return NewFolder("/").AddFolderObject(aaa)
+			},
+		},
+		"allOfIt": {
+			fillFs:     makeInterestingFs,
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				ccc := NewFolder("ccc").AddFileObject(m3)
+				bbb := NewFolder("bbb").AddFileObject(m1)
+				aaa := NewFolder("aaa").AddFileObject(m2).
+					AddFolderObject(bbb).AddFolderObject(ccc)
+				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
+			},
+		},
+		"Nope": {
+			fillFs:     makeInterestingFs,
+			pathToLoad: "/monkey",
+			errMsg:     "does not exist",
+		},
+		"noGoingUp": {
+			fillFs:     makeInterestingFs,
+			pathToLoad: "../zzz",
+			errMsg:     "specify absolute path or something at or below your working directory",
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
-			l := NewFsLoader(tc.fs())
-			f, err := l.LoadFolder(tc.path)
-			f.Accept(NewVisitorDump(l))
+			fs := afero.NewMemMapFs() // afero.NewOsFs()
+			tc.fillFs(t, fs)
+			ldr := NewFsLoader(fs)
+			fld, err := ldr.LoadFolder(tc.pathToLoad)
+			if tc.errMsg != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errMsg)
+				return
+			}
 			assert.NoError(t, err)
-			assert.NotNil(t, f)
-			assert.True(t, tc.expected().Equals(f))
+			assert.NotNil(t, fld)
+			if !assert.True(t, tc.expectedFld().Equals(fld)) {
+				t.Errorf("Didn't get expected folder.")
+				t.Log("Loaded:")
+				fld.Accept(NewVisitorDump(ldr))
+				t.Log("Expected:")
+				tc.expectedFld().Accept(NewVisitorDump(ldr))
+			}
 		})
 	}
 }

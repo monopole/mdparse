@@ -10,7 +10,6 @@ type MyTreeItem interface {
 	Parent() MyTreeItem
 	Name() string
 	FullName() string
-	DirName() string
 	Root() MyTreeItem
 	Accept(TreeVisitor)
 }
@@ -107,16 +106,6 @@ func (ti *myTreeItem) FullName() string {
 		return ti.name
 	}
 	return filepath.Join(ti.parent.FullName(), ti.name)
-}
-
-func (ti *myTreeItem) DirName() string {
-	if ti == nil {
-		return "{ERROR}"
-	}
-	if ti.parent == nil {
-		return ""
-	}
-	return ti.parent.FullName()
 }
 
 func (ti *myTreeItem) Accept(_ TreeVisitor) {

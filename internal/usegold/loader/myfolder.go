@@ -1,7 +1,6 @@
 package loader
 
 import (
-	"log/slog"
 	"path/filepath"
 )
 
@@ -22,14 +21,16 @@ func (fl *MyFolder) Accept(v TreeVisitor) {
 	v.VisitFolder(fl)
 }
 
-func (fl *MyFolder) AddFileObject(file *MyFile) {
+func (fl *MyFolder) AddFileObject(file *MyFile) *MyFolder {
 	file.parent = fl
 	fl.files = append(fl.files, file)
+	return fl
 }
 
-func (fl *MyFolder) AddFolderObject(folder *MyFolder) {
+func (fl *MyFolder) AddFolderObject(folder *MyFolder) *MyFolder {
 	folder.parent = fl
 	fl.dirs = append(fl.dirs, folder)
+	return fl
 }
 
 func (fl *MyFolder) IsEmpty() bool {
@@ -80,24 +81,11 @@ func EqualFolderSlice(s1 []*MyFolder, s2 []*MyFolder) bool {
 	return true
 }
 
-func (fl *MyFolder) loadFileFromFs(name string) error {
-	slog.Debug("adding   FILE", "name", name, "parent", fl.FullName())
+func (fl *MyFolder) HasFile(name string) bool {
 	for _, fi := range fl.files {
 		if fi.Name() == name {
-			// Already got it
-			return nil
+			return true
 		}
 	}
-	fi := MyFile{
-		myTreeItem: myTreeItem{
-			parent: fl,
-			name:   name,
-		},
-	}
-	// Do a test read.  inject FsLoader
-	//if _, err := fi.Contents(); err != nil {
-	//	return err
-	//}
-	fl.files = append(fl.files, &fi)
-	return nil
+	return false
 }

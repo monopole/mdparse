@@ -54,7 +54,7 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 	if err != nil {
 		return
 	}
-	dir, name := FSplit(cleanPath)
+	dir, base := FSplit(cleanPath)
 	if dir == "" {
 		dir = "."
 	}
@@ -64,19 +64,14 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 			err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
 			return
 		}
-		var sub *MyFolder
-		sub, err = fsl.LoadSubFolder(fld, name)
-		if err != nil {
-			return
-		}
-		fld.AddFolderObject(sub)
+		_, err = fsl.LoadSubFolder(fld, base)
 		return
 	}
 	if err = fsl.IsAllowedFile(info); err != nil {
 		err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
 		return
 	}
-	fld.AddFileObject(NewFile(name))
+	fld.AddFileObject(NewFile(base))
 	return
 }
 
@@ -84,11 +79,10 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 // The arguments are a parent folder, and the simple name of a folder inside
 // the parent - no path separators in the folderName.
 // The parent's name must be either a full absolute path or a relative
-// path that makes sense with respect to the process's working directory.
+// path that makes sense with respect to the process' working directory.
 // This function returns a new folder object, loaded with all approved
-// sub-folders and their files. The new folder knows about its parent, but
-// the parent doesn't know about it. The function returns nil if the folder
-// is empty or has no approved sub-folders or files.
+// sub-folders and their files. The new folder knows about its parent, and
+// the parent is informed of the child.
 // If "order" files are encountered in a given sub-folder, they are obeyed
 // to sort the files and sub-folders at a given level.
 // Any error returned will be from the file system.
@@ -110,13 +104,8 @@ func (fsl *FsLoader) LoadSubFolder(
 		info := dirEntries[i]
 		if info.IsDir() {
 			if err = fsl.IsAllowedFolder(info); err == nil {
-				var child *MyFolder
-				child, err = fsl.LoadSubFolder(&fld, info.Name())
-				if err != nil {
+				if _, err = fsl.LoadSubFolder(&fld, info.Name()); err != nil {
 					return nil, err
-				}
-				if child != nil {
-					fld.dirs = append(fld.dirs, child)
 				}
 			}
 			continue
@@ -129,9 +118,8 @@ func (fsl *FsLoader) LoadSubFolder(
 			continue
 		}
 		if err = fsl.IsAllowedFile(info); err == nil {
-			if err = fld.loadFileFromFs(info.Name()); err != nil {
-				return nil, err
-			}
+			fld.AddFileObject(NewFile(info.Name()))
+			// TODO: Read the file contents
 		}
 	}
 	if fld.IsEmpty() {
@@ -140,5 +128,6 @@ func (fsl *FsLoader) LoadSubFolder(
 	}
 	fld.files = ReorderFiles(fld.files, ordering)
 	fld.dirs = ReorderFolders(fld.dirs, ordering)
+	parent.dirs = append(parent.dirs, &fld)
 	return &fld, nil
 }

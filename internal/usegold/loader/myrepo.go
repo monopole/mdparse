@@ -74,12 +74,7 @@ func (r *MyRepo) Init(fsl *FsLoader) (err error) {
 			name: base,
 		},
 	}
-	var sub *MyFolder
-	sub, err = fsl.LoadSubFolder(r.folder, dir)
-	if err != nil {
-		return
-	}
-	r.folder.dirs = append(r.folder.dirs, sub)
+	_, err = fsl.LoadSubFolder(r.folder, dir)
 	return nil
 }
 
