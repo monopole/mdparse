@@ -10,7 +10,7 @@ import (
 // filter returns an error if conditions not met
 type filter func(info os.FileInfo) error
 
-var selfPath = "." + string(filepath.Separator)
+var selfPath = "." + rootSlash
 
 // FSplit splits a path into a parent path and a single name.
 // It differs from filepath.Split in how it handles "." and
@@ -25,7 +25,7 @@ func FSplit(path string) (string, string) {
 	if strings.HasPrefix(dir, selfPath) {
 		dir = dir[2:]
 	}
-	if dir == string(filepath.Separator) {
+	if dir == rootSlash {
 		return dir, name
 	}
 	dir = stripTrailingSlash(dir)
@@ -36,7 +36,7 @@ func FSplit(path string) (string, string) {
 }
 
 func stripTrailingSlash(path string) string {
-	if strings.HasSuffix(path, string(filepath.Separator)) {
+	if strings.HasSuffix(path, rootSlash) {
 		return path[:len(path)-1]
 	}
 	return path

@@ -26,6 +26,8 @@ func NewFsLoader(fs afero.Fs) *FsLoader {
 	}
 }
 
+const rootSlash = string(filepath.Separator)
+
 // Read returns the contents of a file.
 func (fsl *FsLoader) Read(fi *MyFile) ([]byte, error) {
 	return fsl.fs.ReadFile(fi.FullName())
@@ -64,7 +66,22 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 			err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
 			return
 		}
+		if base == "" {
+			// Special case - user asking for entire root file system.
+			if dir != rootSlash {
+				err = fmt.Errorf("something wrong with dir/base split")
+				return
+			}
+			fld, err = fsl.LoadSubFolder(fld, base)
+			if fld != nil {
+				fld.name = rootSlash
+			}
+			return
+		}
 		_, err = fsl.LoadSubFolder(fld, base)
+		if fld.IsEmpty() {
+			fld = nil
+		}
 		return
 	}
 	if err = fsl.IsAllowedFile(info); err != nil {

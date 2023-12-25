@@ -100,7 +100,7 @@ func (ti *myTreeItem) Parent() MyTreeItem {
 
 func (ti *myTreeItem) FullName() string {
 	if ti == nil {
-		return string(filepath.Separator)
+		return rootSlash
 	}
 	if ti.parent == nil {
 		return ti.name

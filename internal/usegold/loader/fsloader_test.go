@@ -94,7 +94,12 @@ var (
 		[]byte("# m1"), []byte("# m2"), []byte("# m3")
 )
 
-func makeInterestingFs(t *testing.T, fs afero.Fs) {
+func makeSmallFs(t *testing.T, fs afero.Fs) {
+	assert.NoError(t, afero.WriteFile(fs, "/m0.md", m0C, RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/m1.md", m1C, RW))
+}
+
+func makeMediumFs(t *testing.T, fs afero.Fs) {
 	// WriteFile creates folders as needed.
 	assert.NoError(t, afero.WriteFile(fs, "/m0.md", m0C, RW))
 	assert.NoError(t, afero.WriteFile(fs, "/aaa/bbb/m1.md", m1C, RW))
@@ -118,7 +123,7 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 			},
 			pathToLoad: "/",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/")
+				return nil
 			},
 		},
 		"nothingWithError": {
@@ -150,7 +155,7 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 			},
 			pathToLoad: "/",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/")
+				return nil
 			},
 		},
 		"oneEmptyFolderAgain": {
@@ -159,20 +164,29 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 			},
 			pathToLoad: "/aaa",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/")
+				return nil
 			},
 		},
 		"justOneDir": {
 			fillFs: func(tt *testing.T, fs afero.Fs) {
 				assert.NoError(tt, afero.WriteFile(fs, "/aaa/m1.md", m1C, RW))
 			},
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				return NewFolder("/").AddFolderObject(NewFolder("aaa").AddFileObject(m1))
+			},
+		},
+		"justOneSubDir": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				assert.NoError(tt, afero.WriteFile(fs, "/aaa/m1.md", m1C, RW))
+			},
 			pathToLoad: "/aaa",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/").AddFolderObject(NewFolder("aaa")).AddFileObject(m1)
+				return NewFolder("/").AddFolderObject(NewFolder("aaa").AddFileObject(m1))
 			},
 		},
 		"justAAA": {
-			fillFs:     makeInterestingFs,
+			fillFs:     makeMediumFs,
 			pathToLoad: "/aaa",
 			expectedFld: func() *MyFolder {
 				ccc := NewFolder("ccc").AddFileObject(m3)
@@ -182,24 +196,21 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				return NewFolder("/").AddFolderObject(aaa)
 			},
 		},
-		"allOfIt": {
-			fillFs:     makeInterestingFs,
+		"allOfSmallFs": {
+			fillFs:     makeSmallFs,
 			pathToLoad: "/",
 			expectedFld: func() *MyFolder {
-				ccc := NewFolder("ccc").AddFileObject(m3)
-				bbb := NewFolder("bbb").AddFileObject(m1)
-				aaa := NewFolder("aaa").AddFileObject(m2).
-					AddFolderObject(bbb).AddFolderObject(ccc)
+				aaa := NewFolder("aaa").AddFileObject(m1)
 				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
 			},
 		},
 		"Nope": {
-			fillFs:     makeInterestingFs,
+			fillFs:     makeMediumFs,
 			pathToLoad: "/monkey",
 			errMsg:     "does not exist",
 		},
 		"noGoingUp": {
-			fillFs:     makeInterestingFs,
+			fillFs:     makeMediumFs,
 			pathToLoad: "../zzz",
 			errMsg:     "specify absolute path or something at or below your working directory",
 		},
@@ -215,7 +226,6 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.NotNil(t, fld)
 			if !assert.True(t, tc.expectedFld().Equals(fld)) {
 				t.Errorf("Didn't get expected folder.")
 				t.Log("Loaded:")

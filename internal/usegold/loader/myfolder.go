@@ -1,9 +1,5 @@
 package loader
 
-import (
-	"path/filepath"
-)
-
 // MyFolder is a named group of files and folders.
 type MyFolder struct {
 	myTreeItem
@@ -38,7 +34,7 @@ func (fl *MyFolder) IsEmpty() bool {
 }
 
 func (fl *MyFolder) IsRoot() bool {
-	return fl.name == string(filepath.Separator)
+	return fl.name == rootSlash
 }
 
 func (fl *MyFolder) Equals(other *MyFolder) bool {

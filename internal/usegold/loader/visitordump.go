@@ -3,7 +3,6 @@ package loader
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 	"unicode"
 )
 
@@ -33,7 +32,7 @@ func (v *VisitorDump) VisitFolder(fl *MyFolder) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Print(fl.name)
 	if !fl.IsRoot() {
-		fmt.Print(string(filepath.Separator))
+		fmt.Print(rootSlash)
 	}
 	fmt.Println()
 	v.indent += 2
