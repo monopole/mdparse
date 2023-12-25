@@ -100,7 +100,6 @@ func makeSmallFs(t *testing.T, fs afero.Fs) {
 }
 
 func makeMediumFs(t *testing.T, fs afero.Fs) {
-	// WriteFile creates folders as needed.
 	assert.NoError(t, afero.WriteFile(fs, "/m0.md", m0C, RW))
 	assert.NoError(t, afero.WriteFile(fs, "/aaa/bbb/m1.md", m1C, RW))
 	assert.NoError(t, afero.WriteFile(fs, "/aaa/m2.md", m2C, RW))
@@ -132,6 +131,16 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 			},
 			pathToLoad: "/a.md",
 			errMsg:     "file does not exist",
+		},
+		"Nope": {
+			fillFs:     makeSmallFs,
+			pathToLoad: "/monkey",
+			errMsg:     "does not exist",
+		},
+		"noGoingUp": {
+			fillFs:     makeSmallFs,
+			pathToLoad: "../zzz",
+			errMsg:     "specify absolute path or something at or below your working directory",
 		},
 		"oneFile": {
 			fillFs: func(tt *testing.T, fs afero.Fs) {
@@ -185,7 +194,26 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				return NewFolder("/").AddFolderObject(NewFolder("aaa").AddFileObject(m1))
 			},
 		},
-		"justAAA": {
+		"allOfSmallFs": {
+			fillFs:     makeSmallFs,
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				aaa := NewFolder("aaa").AddFileObject(m1)
+				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
+			},
+		},
+		"allOfMediumFs": {
+			fillFs:     makeMediumFs,
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				ccc := NewFolder("ccc").AddFileObject(m3)
+				bbb := NewFolder("bbb").AddFileObject(m1)
+				aaa := NewFolder("aaa").AddFileObject(m2).
+					AddFolderObject(bbb).AddFolderObject(ccc)
+				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
+			},
+		},
+		"fromMediumJustAAA": {
 			fillFs:     makeMediumFs,
 			pathToLoad: "/aaa",
 			expectedFld: func() *MyFolder {
@@ -196,23 +224,12 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				return NewFolder("/").AddFolderObject(aaa)
 			},
 		},
-		"allOfSmallFs": {
-			fillFs:     makeSmallFs,
-			pathToLoad: "/",
+		"fromMediumJustm0": {
+			fillFs:     makeMediumFs,
+			pathToLoad: "/m0.md",
 			expectedFld: func() *MyFolder {
-				aaa := NewFolder("aaa").AddFileObject(m1)
-				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
+				return NewFolder("/").AddFileObject(m0)
 			},
-		},
-		"Nope": {
-			fillFs:     makeMediumFs,
-			pathToLoad: "/monkey",
-			errMsg:     "does not exist",
-		},
-		"noGoingUp": {
-			fillFs:     makeMediumFs,
-			pathToLoad: "../zzz",
-			errMsg:     "specify absolute path or something at or below your working directory",
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
