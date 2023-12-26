@@ -3,23 +3,38 @@ package loader
 // MyFile is named byte array.
 type MyFile struct {
 	myTreeItem
-	// content []byte ?  yes probably put this back as a reload should
-	// just start frrom scratch - the original arg string
-	// so its not a reloadd so much as a load afresh, possibly with
-	//  a new arg.  also the repo should be loaded into memory
-	// and temp space deleted each time.
+	content []byte
 }
 
 var _ MyTreeItem = &MyFile{}
 
-func NewFile(n string) *MyFile {
-	return &MyFile{myTreeItem: myTreeItem{name: n}}
+func NewEmptyFile(n string) *MyFile {
+	return NewFile(n, nil)
+}
+
+func NewFile(n string, c []byte) *MyFile {
+	return &MyFile{
+		myTreeItem: myTreeItem{name: n},
+		content:    c,
+	}
 }
 
 func (fi *MyFile) Accept(v TreeVisitor) {
 	v.VisitFile(fi)
 }
 
+// Load loads the file contents into the file object.
+func (fi *MyFile) Load(fsl *FsLoader) (err error) {
+	fi.content, err = fsl.fs.ReadFile(fi.FullName())
+	return
+}
+
+// C is the contents of the file.
+func (fi *MyFile) C() []byte {
+	return fi.content
+}
+
+// Equals just checks names for now.
 func (fi *MyFile) Equals(other *MyFile) bool {
 	if fi == nil {
 		return other == nil
@@ -27,5 +42,16 @@ func (fi *MyFile) Equals(other *MyFile) bool {
 	if other == nil {
 		return false
 	}
-	return fi.name == other.name
+	if fi.name != other.name {
+		return false
+	}
+	if len(fi.content) != len(other.content) {
+		return false
+	}
+	for i := range fi.content {
+		if fi.content[i] != other.content[i] {
+			return false
+		}
+	}
+	return true
 }

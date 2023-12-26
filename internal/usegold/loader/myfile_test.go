@@ -7,9 +7,16 @@ import (
 	"testing"
 )
 
-func TestMyFileEquals(t *testing.T) {
-	f1, f1Prime := NewFile("f1"), NewFile("f1")
-	f2 := NewFile("f2")
+func TestMyFileEqualsEmpty(t *testing.T) {
+	f1, f1Prime := NewEmptyFile("f1"), NewEmptyFile("f1")
+	f2 := NewEmptyFile("f2")
+	assert.True(t, f1.Equals(f1Prime))
+	assert.False(t, f1.Equals(f2))
+}
+
+func TestMyFileEqualsFull(t *testing.T) {
+	f1, f1Prime := NewFile("f1", []byte("f1")), NewFile("f1", []byte("f1"))
+	f2 := NewFile("f2", []byte("f2"))
 	assert.True(t, f1.Equals(f1Prime))
 	assert.False(t, f1.Equals(f2))
 }

@@ -7,8 +7,8 @@ import (
 )
 
 func TestMyFolderNaming(t *testing.T) {
-	f1 := NewFile("f1")
-	f2 := NewFile("f2")
+	f1 := NewEmptyFile("f1")
+	f2 := NewEmptyFile("f2")
 	d1 := NewFolder("d1").AddFileObject(f1).AddFileObject(f2)
 	assert.Equal(t, "d1", d1.Name())
 	assert.Equal(t, "d1", d1.FullName())
@@ -25,8 +25,8 @@ func TestMyFolderNaming(t *testing.T) {
 }
 
 func TestMyFolderEquals(t *testing.T) {
-	f1, f1Prime := NewFile("f1"), NewFile("f1")
-	f2, f2Prime := NewFile("f2"), NewFile("f2")
+	f1, f1Prime := NewEmptyFile("f1"), NewEmptyFile("f1")
+	f2, f2Prime := NewEmptyFile("f2"), NewEmptyFile("f2")
 
 	d1 := NewFolder("d1").AddFileObject(f1).AddFileObject(f2)
 	d1Prime := NewFolder("d1").AddFileObject(f1Prime).AddFileObject(f2Prime)

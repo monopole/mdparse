@@ -27,21 +27,7 @@ func NewFsLoader(fs afero.Fs) *FsLoader {
 }
 
 const rootSlash = string(filepath.Separator)
-
-// Read returns the contents of a file.
-func (fsl *FsLoader) Read(fi *MyFile) ([]byte, error) {
-	return fsl.fs.ReadFile(fi.FullName())
-	//// myErrFile returns "fake" markdown file showing an error message.
-	//func myErrFile(path string, err error) (*MyFile, error) {
-	//	return &MyFile{
-	//		myTreeItem: myTreeItem{
-	//			parent: nil,
-	//			name:   path,
-	//		},
-	//		content: []byte(fmt.Sprintf("## Unable to load from %s; %s", path, err.Error())),
-	//	}, err
-	//}
-}
+const s = afero.FilePathSeparator
 
 func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 	cleanPath := filepath.Clean(path)
@@ -61,34 +47,41 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 		dir = "."
 	}
 	fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
-	if info.IsDir() {
-		if err = fsl.IsAllowedFolder(info); err != nil {
-			err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
+
+	if !info.IsDir() {
+		if err = fsl.IsAllowedFile(info); err != nil {
+			// If user explicitly asked for a disallowed file, complain.
+			// Deeper in, when absorbing folders, they are just ignored.
+			err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
 			return
 		}
-		if base == "" {
-			// Special case - user asking for entire root file system.
-			if dir != rootSlash {
-				err = fmt.Errorf("something wrong with dir/base split")
-				return
-			}
-			fld, err = fsl.LoadSubFolder(fld, base)
-			if fld != nil {
-				fld.name = rootSlash
-			}
+		fi := NewEmptyFile(base)
+		fld.AddFileObject(fi)
+		err = fi.Load(fsl)
+		return
+	}
+	if err = fsl.IsAllowedFolder(info); err != nil {
+		// If user explicitly asked for a disallowed folder, complain.
+		// Deeper in, when absorbing folders, they are just ignored.
+		err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
+		return
+	}
+	if base == "" {
+		// Special case - user asking for the entire root file system.
+		if dir != rootSlash {
+			err = fmt.Errorf("something wrong with dir/base split")
 			return
 		}
-		_, err = fsl.LoadSubFolder(fld, base)
-		if fld.IsEmpty() {
-			fld = nil
+		fld, err = fsl.LoadSubFolder(fld, base)
+		if fld != nil {
+			fld.name = rootSlash
 		}
 		return
 	}
-	if err = fsl.IsAllowedFile(info); err != nil {
-		err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
-		return
+	_, err = fsl.LoadSubFolder(fld, base)
+	if fld.IsEmpty() {
+		fld = nil
 	}
-	fld.AddFileObject(NewFile(base))
 	return
 }
 
@@ -135,8 +128,12 @@ func (fsl *FsLoader) LoadSubFolder(
 			continue
 		}
 		if err = fsl.IsAllowedFile(info); err == nil {
-			fld.AddFileObject(NewFile(info.Name()))
-			// TODO: Read the file contents
+			fi := NewEmptyFile(info.Name())
+			fld.AddFileObject(fi)
+			err = fi.Load(fsl)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	if fld.IsEmpty() {
