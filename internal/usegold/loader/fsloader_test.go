@@ -9,20 +9,22 @@ import (
 )
 
 // Permission bits
-// The file or folder's owner:
-// 400      Read
-// 200      Write
-// 100      Execute/search
 //
-//	        Other users in the file or folder's group:
-//	40      Read
-//	20      Write
-//	10      Execute/search
+//	The file or folder's owner:
 //
-//	        Other users not in the group:
-//	 4      Read
-//	 2      Write
-//	 1      Execute/search
+// 400  Read
+// 200  Write
+// 100  Execute/search
+//
+//	    Other users in the file or folder's group:
+//	40  Read
+//	20  Write
+//	10  Execute/search
+//
+//	    Other users not in the group:
+//	 4  Read
+//	 2  Write
+//	 1  Execute/search
 const (
 	RW  os.FileMode = 0644
 	RWX os.FileMode = 0755

@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+const dotGit = ".git"
+
 // MyRepo is a named group of files and folders.
 type MyRepo struct {
 	// name is the URL of the repo, e.g.
@@ -88,7 +90,8 @@ func cloneRepo(repoName string) (string, error) {
 		return "", fmt.Errorf("unable to create tmp dir (%w)", err)
 	}
 	slog.Info("Cloning to " + tmpDir)
-	cmd := exec.Command(gitPath, "clone", "https://github.com/"+repoName+".git", tmpDir)
+	cmd := exec.Command(
+		gitPath, "clone", "https://github.com/"+repoName+dotGit, tmpDir)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err = cmd.Run(); err != nil {
@@ -127,8 +130,8 @@ func extractGithubRepoName(n string) (string, string, error) {
 			n = n[len(p):]
 		}
 	}
-	if strings.HasSuffix(n, ".git") {
-		n = n[0 : len(n)-len(".git")]
+	if strings.HasSuffix(n, dotGit) {
+		n = n[0 : len(n)-len(dotGit)]
 	}
 	i := strings.Index(n, "/")
 	if i < 1 {

@@ -26,14 +26,6 @@ type myTreeItem struct {
 	name   string
 }
 
-/*
-To test all this, we need to be able to create MyFile and MyFolder
-instances from strings that contain these paths, and compare them
-to structures built programmatical
-(e.g f = newFile, d = newFolder, d.add(f), etc.)
-so we need some simple Equals methods.
-*/
-
 // MakeTreeItem returns a MyTreeItem representing the argument.
 func MakeTreeItem(fsl *FsLoader, path string) (result MyTreeItem, err error) {
 	if path == "" {
@@ -48,10 +40,10 @@ func MakeTreeItem(fsl *FsLoader, path string) (result MyTreeItem, err error) {
 		return absorbRepo(fsl, path)
 	}
 	cleanPath := filepath.Clean(path)
-	// Disallow paths that start with "..", because the notion
+	// Disallow paths that start with upDir, because the notion
 	// of the root name is ambiguous, and we use the root name as a
 	// user visible title.  The user's *intent* isn't clear.
-	if strings.HasPrefix(cleanPath, "..") {
+	if strings.HasPrefix(cleanPath, upDir) {
 		err = fmt.Errorf("specify absolute path or something at or below your working directory")
 		return
 	}

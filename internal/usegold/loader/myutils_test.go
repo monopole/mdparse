@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Demo the difference between
+// A test to demonstrate the difference between
 //
 //	dir, base = filepath.Dir(tc.arg), filepath.Base(tc.arg)
 //	dir, base = filepath.Split
@@ -22,9 +22,9 @@ func TestFsSplit(t *testing.T) {
 	}
 	type testC struct {
 		arg string
-		r0  *result
-		r1  *result
-		r2  *result
+		r0  *result // filepath.Dir(tc.arg), filepath.Base(tc.arg)
+		r1  *result // filepath.Split
+		r2  *result // FSplit
 	}
 	for n, tc := range map[string]testC{
 		"t1": {

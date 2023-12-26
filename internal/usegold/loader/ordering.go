@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-// MyIsOrderFile returns true if the file appears to be a "reorder"
+// IsOrderingFile returns true if the file appears to be an "order"
 // file specifying how to re-order the files in the directory
-// in some fashion other than directory order.
-func MyIsOrderFile(info os.FileInfo) bool {
+// in some fashion other than normal directory order.
+func IsOrderingFile(info os.FileInfo) bool {
 	if info.IsDir() {
 		return false
 	}
 	if !info.Mode().IsRegular() {
 		return false
 	}
-	return filepath.Base(info.Name()) == "README_ORDER.txt"
+	return filepath.Base(info.Name()) == orderingFile
 }
 
 // LoadOrderFile returns a list of names specify file name order priority.

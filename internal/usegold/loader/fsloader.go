@@ -26,13 +26,38 @@ func NewFsLoader(fs afero.Fs) *FsLoader {
 	}
 }
 
-const rootSlash = string(filepath.Separator)
+const (
+	orderingFile = "README_ORDER.txt"
+	rootSlash    = string(filepath.Separator)
+	currentDir   = "."
+	selfPath     = currentDir + rootSlash
+	upDir        = ".."
+)
 
-func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
-	cleanPath := filepath.Clean(path)
-	// Disallow paths that start with "..", because in the task at hand
+// LoadFolder loads the files at or below a path into memory, returning them
+// inside an MyFolder instance.
+//
+// Only "allowed" files and folders are included, per the filter functions
+// provided.
+//
+// If an "orderingFile" is found in a directory, it's used to sort the files
+// and folders in the in-memory representation. An ordering file is just text,
+// with one name per line. Ordered files appear first, with the remainder
+// sorted by the order imposed by fs.ReadDir.
+//
+// If the path is a file, only that file is loaded, but since the function
+// must return a folder, the folder's name is the path to that file minus
+// the base name.  The path might be absolute (starting with the rootSlash)
+// or relative, starting with any legal character other than rootSlash.
+// If the path is *just* a file name, with no folder names, then the name
+// of the returned folder is ".".
+//
+// Any error returned will be from the file system.
+func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
+	cleanPath := filepath.Clean(rawPath)
+	// Disallow paths that start with upDir, because in the task at hand
 	// we want a clear root directory for display.
-	if strings.HasPrefix(cleanPath, "..") {
+	if strings.HasPrefix(cleanPath, upDir) {
 		return nil, fmt.Errorf(
 			"specify absolute path or something at or below your working directory")
 	}
@@ -43,7 +68,7 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 	}
 	dir, base := FSplit(cleanPath)
 	if dir == "" {
-		dir = "."
+		dir = currentDir
 	}
 	fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
 
@@ -65,7 +90,7 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 	}
 	if base == "" {
 		// Special case - user asking for the entire root file system.
-		if dir != rootSlash && dir != "." {
+		if dir != rootSlash {
 			err = fmt.Errorf("something wrong with dir/base split")
 			return
 		}
@@ -82,17 +107,13 @@ func (fsl *FsLoader) LoadFolder(path string) (fld *MyFolder, err error) {
 	return
 }
 
-// loadSubFolder returns a MyFolder instance representing an FS folder.
+// loadSubFolder returns a fully loaded MyFolder instance.
 // The arguments are a parent folder, and the simple name of a folder inside
 // the parent - no path separators in the folderName.
 // The parent's name must be either a full absolute path or a relative
 // path that makes sense with respect to the process' working directory.
-// This function returns a new folder object, loaded with all approved
-// sub-folders and their files. The new folder knows about its parent, and
+// This function returns a new folder object that knows about its parent, and
 // the parent is informed of the child.
-// If "order" files are encountered in a given sub-folder, they are obeyed
-// to sort the files and sub-folders at a given level.
-// Any error returned will be from the file system.
 func (fsl *FsLoader) loadSubFolder(
 	parent *MyFolder, folderName string) (*MyFolder, error) {
 	fullName := filepath.Join(parent.FullName(), folderName)
@@ -117,7 +138,7 @@ func (fsl *FsLoader) loadSubFolder(
 			}
 			continue
 		}
-		if MyIsOrderFile(info) {
+		if IsOrderingFile(info) {
 			ordering, err = LoadOrderFile(info)
 			if err != nil {
 				return nil, err
@@ -140,6 +161,7 @@ func (fsl *FsLoader) loadSubFolder(
 	return &fld, nil
 }
 
+// loadSubFile loads a file into a folder.
 func (fsl *FsLoader) loadSubFile(fld *MyFolder, n string) (err error) {
 	fi := NewEmptyFile(n)
 	fld.AddFileObject(fi)

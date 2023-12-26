@@ -10,8 +10,6 @@ import (
 // filter returns an error if conditions not met
 type filter func(info os.FileInfo) error
 
-var selfPath = "." + rootSlash
-
 // FSplit splits a path into a parent path and a single name.
 // It differs from filepath.Split in how it handles "." and
 // trailing slashes. The resulting parent path never has a trailing
@@ -29,7 +27,7 @@ func FSplit(path string) (string, string) {
 		return dir, name
 	}
 	dir = stripTrailingSlash(dir)
-	if dir == "" && name == "." {
+	if dir == "" && name == currentDir {
 		return "", ""
 	}
 	return dir, name
@@ -66,12 +64,12 @@ var IsADotDirErr = fmt.Errorf("not allowed to load from dot folder")
 func IsNotADotDir(info os.FileInfo) error {
 	n := info.Name()
 	// Allow special dir names.
-	if n == "." || n == selfPath || n == ".." {
+	if n == currentDir || n == selfPath || n == upDir {
 		return nil
 	}
 	// Ignore .git, etc.
 	base := filepath.Base(n)
-	if len(base) > 1 && string(base[0]) == "." {
+	if len(base) > 1 && string(base[0]) == currentDir {
 		return IsADotDirErr
 	}
 	return nil
