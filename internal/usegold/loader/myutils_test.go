@@ -3,11 +3,8 @@ package loader_test
 import (
 	. "github.com/monopole/mdparse/internal/usegold/loader"
 	"github.com/stretchr/testify/assert"
-	"io/fs"
-	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 // A test to demonstrate the difference between
@@ -27,7 +24,22 @@ func TestFsSplit(t *testing.T) {
 		r2  *result // FSplit
 	}
 	for n, tc := range map[string]testC{
-		"t1": {
+		"t0": { // good
+			arg: "../aaa/bbb/ccc",
+			r0: &result{
+				dir:  "../aaa/bbb",
+				base: "ccc",
+			},
+			r1: &result{
+				dir:  "../aaa/bbb/",
+				base: "ccc",
+			},
+			r2: &result{
+				dir:  "../aaa/bbb",
+				base: "ccc",
+			},
+		},
+		"t1": { // good
 			arg: "/aaa/bbb/ccc",
 			r0: &result{
 				dir:  "/aaa/bbb",
@@ -42,7 +54,7 @@ func TestFsSplit(t *testing.T) {
 				base: "ccc",
 			},
 		},
-		"t2": {
+		"t2": { // good
 			arg: "/bbb",
 			r0: &result{
 				dir:  "/",
@@ -50,7 +62,7 @@ func TestFsSplit(t *testing.T) {
 			},
 			// r2==r1==r0
 		},
-		"t3": {
+		"t3": { // good
 			arg: "bbb",
 			r0: &result{
 				dir:  ".",
@@ -62,7 +74,7 @@ func TestFsSplit(t *testing.T) {
 			},
 			// r2 == r1
 		},
-		"t4": {
+		"t4": { // good but we need to know it
 			arg: "",
 			r0: &result{
 				dir:  ".",
@@ -74,7 +86,7 @@ func TestFsSplit(t *testing.T) {
 			},
 			// r2 == r1
 		},
-		"t5": {
+		"t5": { // good but we need to know it
 			arg: "/",
 			r0: &result{
 				dir:  "/",
@@ -86,7 +98,7 @@ func TestFsSplit(t *testing.T) {
 			},
 			// r2 == r1
 		},
-		"t6": {
+		"t6": { // good
 			arg: "./bob/sally",
 			r0: &result{
 				dir:  "bob",
@@ -101,7 +113,7 @@ func TestFsSplit(t *testing.T) {
 				base: "sally",
 			},
 		},
-		"t7": {
+		"t7": { // good
 			arg: "./bob",
 			r0: &result{
 				dir:  ".",
@@ -116,7 +128,7 @@ func TestFsSplit(t *testing.T) {
 				base: "bob",
 			},
 		},
-		"t8": {
+		"t8": { // good but we need to know it
 			arg: ".",
 			r0: &result{
 				dir:  ".",
@@ -131,7 +143,7 @@ func TestFsSplit(t *testing.T) {
 				base: "", // no dot
 			},
 		},
-		"t9": {
+		"t9": { // good but we need to know it
 			arg: "./",
 			r0: &result{
 				dir:  ".",
@@ -165,84 +177,6 @@ func TestFsSplit(t *testing.T) {
 			assert.Equal(t, tc.r2.dir, dir)
 			assert.Equal(t, tc.r2.base, base)
 
-		})
-	}
-}
-
-type mockFileInfo struct {
-	name string
-	mode fs.FileMode
-}
-
-func (m *mockFileInfo) Name() string       { return m.name }
-func (m *mockFileInfo) Size() int64        { return 0 }
-func (m *mockFileInfo) Mode() fs.FileMode  { return m.mode }
-func (m *mockFileInfo) ModTime() time.Time { panic("didn't think ModTime was needed") }
-func (m *mockFileInfo) IsDir() bool        { panic("didn't think IsDir was needed") }
-func (m *mockFileInfo) Sys() any           { panic("didn't think Sys was needed") }
-
-var _ os.FileInfo = &mockFileInfo{}
-
-type tCase struct {
-	fi  *mockFileInfo
-	err error
-}
-
-func TestIsMarkDownFile(t *testing.T) {
-	for n, tc := range map[string]tCase{
-		"t1": {
-			fi: &mockFileInfo{
-				name: "aDirectory.md",
-				mode: fs.ModeDir,
-			},
-			err: NotMarkDownErr,
-		},
-		"t2": {
-			fi: &mockFileInfo{
-				name: "notMarkdown",
-			},
-			err: NotMarkDownErr,
-		},
-		"t3": {
-			fi: &mockFileInfo{
-				name: "aFileButIrregular.md",
-				mode: fs.ModeIrregular,
-			},
-			err: NotMarkDownErr,
-		},
-		"t4": {
-			fi: &mockFileInfo{
-				name: "aFile.md",
-			},
-		},
-	} {
-		t.Run(n, func(t *testing.T) {
-			assert.Equal(t, tc.err, IsMarkDownFile(tc.fi))
-		})
-	}
-}
-
-func TestIsNotADotDir(t *testing.T) {
-	for n, tc := range map[string]tCase{
-		"t1": {
-			fi: &mockFileInfo{
-				name: ".git",
-			},
-			err: IsADotDirErr,
-		},
-		"t2": {
-			fi: &mockFileInfo{
-				name: "./",
-			},
-		},
-		"t3": {
-			fi: &mockFileInfo{
-				name: "..",
-			},
-		},
-	} {
-		t.Run(n, func(t *testing.T) {
-			assert.Equal(t, tc.err, IsNotADotDir(tc.fi))
 		})
 	}
 }

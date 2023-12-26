@@ -38,25 +38,49 @@ const (
 // inside an MyFolder instance.
 //
 // Only "allowed" files and folders are included, per the filter functions
-// provided.
+// provided. If filtering leaves a folder empty, it is discarded.  If nothing
+// makes it through, the function returns a nil folder and no error.
 //
 // If an "orderingFile" is found in a directory, it's used to sort the files
-// and folders in the in-memory representation. An ordering file is just text,
-// with one name per line. Ordered files appear first, with the remainder
-// sorted by the order imposed by fs.ReadDir.
+// and sub-folders in that folder's in-memory representation. An ordering file
+// is just text, with one name per line. Ordered files appear first, with the
+// remainder in the order imposed by fs.ReadDir.
 //
-// If the path is a file, only that file is loaded, but since the function
-// must return a folder, the folder's name is the path to that file minus
-// the base name.  The path might be absolute (starting with the rootSlash)
-// or relative, starting with any legal character other than rootSlash.
-// If the path is *just* a file name, with no folder names, then the name
-// of the returned folder is ".".
+// If the path is a file, only that file is loaded.  Since LoadFolder must
+// return a folder, the folder's name is the path to that file minus the file's
+// name.  The path might be absolute (starting with the rootSlash) or relative,
+// starting with any legal character other than rootSlash. If the path is only
+// a file name (no folder names), then the name of the returned folder is ".",
+// and it contains only one file.
+//
+// Examples:
+//
+//	             path | returned folder name | contents
+//	------------------+----------------------+--------------
+//	           foo.md |                    . | foo.md
+//	         ./foo.md |                    . | foo.md
+//	        ../foo.md |            {illegal} | {illegal}
+//	/usr/local/foo.md |           /usr/local | foo.md
+//	       bar/foo.md |                  bar | foo.md
+//
+// If the path is a folder, only that folder is loaded; folders rooted higher
+// in the tree are ignored.
+//
+// Examples:
+//
+//	             path | returned folder name | contents
+//	------------------+----------------------+--------------
+//	              foo |                  foo | {whatever}
+//	            ./foo |                  foo | {whatever}
+//	           ../foo |            {illegal} | {illegal}
+//	   /usr/local/foo |       /usr/local/foo | {whatever}
+//	          bar/foo |              bar/foo | {whatever}
 //
 // Any error returned will be from the file system.
 func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	cleanPath := filepath.Clean(rawPath)
-	// Disallow paths that start with upDir, because in the task at hand
-	// we want a clear root directory for display.
+	// For now, disallow paths that start with upDir, because in the task at
+	// hand we want a clear root directory for display.
 	if strings.HasPrefix(cleanPath, upDir) {
 		return nil, fmt.Errorf(
 			"specify absolute path or something at or below your working directory")
@@ -66,10 +90,19 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	if err != nil {
 		return
 	}
-	dir, base := FSplit(cleanPath)
-	if dir == "" {
-		dir = currentDir
-	}
+	dir, base := filepath.Dir(cleanPath), filepath.Base(cleanPath)
+	// Behavior:
+	//	             path  |       dir  | base
+	//	-------------------+------------+-----------
+	//	   {empty string}  |         .  |  .
+	//	                .  |         .  |  .
+	//	               ./  |         .  |  .
+	//                  /  |         /  |  /
+	//	            ./foo  |         .  | foo
+	//	           ../foo  |        ..  | foo
+	//	             /foo  |         /  | foo
+	//	   /usr/local/foo  | /usr/local | foo
+
 	fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
 
 	if !info.IsDir() {
