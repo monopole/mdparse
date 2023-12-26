@@ -43,8 +43,8 @@ const (
 //
 // If an "orderingFile" is found in a directory, it's used to sort the files
 // and sub-folders in that folder's in-memory representation. An ordering file
-// is just text, with one name per line. Ordered files appear first, with the
-// remainder in the order imposed by fs.ReadDir.
+// is just lines of text, one name per line. Ordered files appear first, with
+// the remainder in the order imposed by fs.ReadDir.
 //
 // If the path is a file, only that file is loaded.  Since LoadFolder must
 // return a folder, the folder's name is the path to that file minus the file's
@@ -70,6 +70,8 @@ const (
 //
 //	             path | returned folder name | contents
 //	------------------+----------------------+--------------
+//	   {empty string} |                    . | {whatever}
+//	                . |                    . | {whatever}
 //	              foo |                  foo | {whatever}
 //	            ./foo |                  foo | {whatever}
 //	           ../foo |            {illegal} | {illegal}
@@ -79,12 +81,14 @@ const (
 // Any error returned will be from the file system.
 func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	cleanPath := filepath.Clean(rawPath)
+
 	// For now, disallow paths that start with upDir, because in the task at
-	// hand we want a clear root directory for display.
+	// hand we want a clear root directory for display. Might allow this later.
 	if strings.HasPrefix(cleanPath, upDir) {
 		return nil, fmt.Errorf(
 			"specify absolute path or something at or below your working directory")
 	}
+
 	var info os.FileInfo
 	info, err = fsl.fs.Stat(cleanPath)
 	if err != nil {
@@ -121,16 +125,9 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 		err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
 		return
 	}
-	if base == "" {
+	if base == rootSlash {
 		// Special case - user asking for the entire root file system.
-		if dir != rootSlash {
-			err = fmt.Errorf("something wrong with dir/base split")
-			return
-		}
-		fld, err = fsl.loadSubFolder(fld, base)
-		if fld != nil {
-			fld.name = rootSlash
-		}
+		fld, err = fsl.loadSubFolder(fld, "")
 		return
 	}
 	_, err = fsl.loadSubFolder(fld, base)
