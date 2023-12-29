@@ -129,7 +129,7 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 		if dir != base {
 			panic("assumption about filepath.Base vs filepath.Dir broken")
 		}
-		fld, err = fsl.loadSubFolder(fld, "")
+		fld, err = fsl.loadSubFolder(nil, base)
 		if fld != nil {
 			fld.name = base
 		}
@@ -151,17 +151,22 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 // It knows its parent, and the parent knows about it.
 func (fsl *FsLoader) loadSubFolder(
 	parent *MyFolder, folderName string) (*MyFolder, error) {
-	fullName := filepath.Join(parent.FullName(), folderName)
+	var (
+		fld      MyFolder
+		ordering []string
+		fullName string
+	)
+	if parent == nil {
+		fullName = folderName
+	} else {
+		fullName = filepath.Join(parent.FullName(), folderName)
+		fld.parent = parent
+	}
 	dirEntries, err := fsl.fs.ReadDir(fullName)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"unable to read folder %q; %w", fullName, err)
 	}
-	var (
-		fld      MyFolder
-		ordering []string
-	)
-	fld.parent = parent
 	fld.name = folderName
 	for i := range dirEntries {
 		info := dirEntries[i]
@@ -192,7 +197,9 @@ func (fsl *FsLoader) loadSubFolder(
 	}
 	fld.files = ReorderFiles(fld.files, ordering)
 	fld.dirs = ReorderFolders(fld.dirs, ordering)
-	parent.dirs = append(parent.dirs, &fld)
+	if parent != nil {
+		parent.dirs = append(parent.dirs, &fld)
+	}
 	return &fld, nil
 }
 
