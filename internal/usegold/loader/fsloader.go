@@ -37,8 +37,8 @@ const (
 // LoadFolder loads the files at or below a path into memory, returning them
 // inside an MyFolder instance.
 //
-// Only "allowed" files and folders are included, per the filter functions
-// provided. If filtering leaves a folder empty, it is discarded.  If nothing
+// Files or folders that don't pass the provided filters are excluded.
+// If filtering leaves a folder empty, it is discarded.  If nothing
 // makes it through, the function returns a nil folder and no error.
 //
 // If an "orderingFile" is found in a directory, it's used to sort the files

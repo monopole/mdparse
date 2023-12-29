@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/monopole/mdparse/internal/usegold/loader"
 	"os"
 
 	"github.com/monopole/mdparse/internal/file"
@@ -53,10 +52,10 @@ func newCommand() *cobra.Command {
 
 `,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			var f loader.MyContrivedFolder
-			if err = f.Initialize(args, loader.DefaultFsLoader); err != nil {
-				return
-			}
+			//var f loader.MyContrivedFolder
+			//if err = f.Initialize(args, loader.DefaultFsLoader); err != nil {
+			//	return
+			//}
 			var m ifc.Marker
 			if useGoldmark := true; useGoldmark {
 				// https://github.com/yuin/goldmark
@@ -92,9 +91,9 @@ func newCommand() *cobra.Command {
 				//   - It has zero official releases.
 				m = useblue.NewMarker(doMyStuff)
 			}
-			if err = m.Load(&f); err != nil {
-				return
-			}
+			//if err = m.Load(&f); err != nil {
+			//	return
+			//}
 			m.Dump()
 			var s string
 			s, err = m.Render()
