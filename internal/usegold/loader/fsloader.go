@@ -112,7 +112,7 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	if !info.IsDir() {
 		if err = fsl.IsAllowedFile(info); err != nil {
 			// If user explicitly asked for a disallowed file, complain.
-			// Deeper in, when absorbing folders, they are just ignored.
+			// Deeper in, when absorbing folders, they are simply ignored.
 			err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
 			return
 		}
@@ -121,13 +121,18 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	}
 	if err = fsl.IsAllowedFolder(info); err != nil {
 		// If user explicitly asked for a disallowed folder, complain.
-		// Deeper in, when absorbing folders, they are just ignored.
+		// Deeper in, when absorbing folders, they are simply ignored.
 		err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
 		return
 	}
-	if base == rootSlash {
-		// Special case - user asking for the entire root file system.
+	if base == rootSlash || base == currentDir {
+		if dir != base {
+			panic("assumption about filepath.Base vs filepath.Dir broken")
+		}
 		fld, err = fsl.loadSubFolder(fld, "")
+		if fld != nil {
+			fld.name = base
+		}
 		return
 	}
 	_, err = fsl.loadSubFolder(fld, base)
@@ -142,8 +147,8 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 // the parent - no path separators in the folderName.
 // The parent's name must be either a full absolute path or a relative
 // path that makes sense with respect to the process' working directory.
-// This function returns a new folder object that knows about its parent, and
-// the parent is informed of the child.
+// This function returns a new folder object - the loaded sub-folder.
+// It knows its parent, and the parent knows about it.
 func (fsl *FsLoader) loadSubFolder(
 	parent *MyFolder, folderName string) (*MyFolder, error) {
 	fullName := filepath.Join(parent.FullName(), folderName)

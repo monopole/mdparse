@@ -202,7 +202,7 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 			},
 		},
 		"fromMediumRelEverything": {
-			fillFs:     makeMediumAbsFs,
+			fillFs:     makeMediumRelFs,
 			pathToLoad: ".",
 			expectedFld: func() *MyFolder {
 				ccc := NewFolder("ccc").AddFileObject(m3)

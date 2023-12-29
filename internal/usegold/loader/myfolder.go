@@ -30,6 +30,9 @@ func (fl *MyFolder) AddFolderObject(folder *MyFolder) *MyFolder {
 }
 
 func (fl *MyFolder) IsEmpty() bool {
+	if fl == nil {
+		return true
+	}
 	return len(fl.files) == 0 && len(fl.dirs) == 0
 }
 
