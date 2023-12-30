@@ -131,12 +131,12 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	//	           ../foo  |        ..  | foo
 	//	             /foo  |         /  | foo
 	//	   /usr/local/foo  | /usr/local | foo
-	fi := NewEmptyFile(base)
-	fi.content, err = fsl.fs.ReadFile(cleanPath)
+	var c []byte
+	c, err = fsl.fs.ReadFile(cleanPath)
 	if err != nil {
 		return nil, err
 	}
-	fld = NewFolder(dir).AddFileObject(fi)
+	fld = NewFolder(dir).AddFileObject(NewFile(base, c))
 	return
 }
 
