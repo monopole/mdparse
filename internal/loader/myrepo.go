@@ -22,9 +22,6 @@ type MyRepo struct {
 	// repo module the content that doesn't pass filters.
 	path string
 
-	// Directory that holds the clone
-	tmpDir string
-
 	// Holds the repo.
 	folder *MyFolder
 }
@@ -47,67 +44,8 @@ func (r *MyRepo) FullName() string {
 	return r.name
 }
 
-func (r *MyRepo) DirName() string {
-	return ""
-}
-
 func (r *MyRepo) Name() string {
 	return r.name
-}
-
-func (r *MyRepo) Init(fsl *FsLoader) (err error) {
-	r.CleanUp()
-	r.tmpDir, err = cloneRepo(r.name)
-	if err != nil {
-		return
-	}
-	base := filepath.Base(r.tmpDir)
-	dir := filepath.Dir(r.tmpDir)
-	if len(r.path) > 0 {
-		base = filepath.Join(base, r.path)
-	}
-	slog.Debug("", "r.tmpDir", r.tmpDir)
-	slog.Debug("", "r.path", r.path)
-	slog.Debug("", "base", base)
-	slog.Debug("", "dir", dir)
-
-	r.folder = &MyFolder{
-		myTreeItem: myTreeItem{
-			name: base,
-		},
-	}
-	//	_, err = fsl.loadSubFolder(r.folder, dir)
-	return nil
-}
-
-func cloneRepo(repoName string) (string, error) {
-	gitPath, err := exec.LookPath("git")
-	if err != nil {
-		return "", fmt.Errorf("maybe no git program? (%w)", err)
-	}
-	tmpDir, err := os.MkdirTemp("", "mdrip-git-")
-	if err != nil {
-		return "", fmt.Errorf("unable to create tmp dir (%w)", err)
-	}
-	slog.Info("Cloning to " + tmpDir)
-	cmd := exec.Command(
-		gitPath, "clone", "https://github.com/"+repoName+dotGit, tmpDir)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	if err = cmd.Run(); err != nil {
-		return "", fmt.Errorf("git clone failure (%w)", err)
-	}
-	slog.Info("Clone complete.")
-	return tmpDir, nil
-}
-
-func (r *MyRepo) CleanUp() {
-	if r.tmpDir == "" {
-		return
-	}
-	_ = os.RemoveAll(r.tmpDir)
-	slog.Info("Deleted " + r.tmpDir)
-	r.tmpDir = ""
 }
 
 // smellsLikeGithubCloneArg returns true if the argument seems
@@ -117,6 +55,29 @@ func smellsLikeGithubCloneArg(arg string) bool {
 	return strings.HasPrefix(arg, "gh:") ||
 		strings.HasPrefix(arg, "git@github.com:") ||
 		strings.HasPrefix(arg, "https://github.com/")
+}
+
+// CloneAndLoadRepo clones a repo locally and loads it.
+// The FsLoader should be injected with a real file system,
+// since the git command line used here clones to real disk.
+func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyRepo, error) {
+	n, p, err := extractGithubRepoName(arg)
+	if err != nil {
+		return nil, err
+	}
+	r := &MyRepo{
+		name: n,
+		path: p,
+	}
+	var tmpDir string
+	tmpDir, err = cloneRepo(r.name)
+	if err != nil {
+		return nil, err
+	}
+	r.folder, err = fsl.LoadFolder(filepath.Join(tmpDir, r.path))
+	r.folder.name = r.path
+	_ = os.RemoveAll(tmpDir)
+	return r, err
 }
 
 // extractGithubRepoName parses strings like git@github.com:monopole/mdrip.git or
@@ -144,4 +105,25 @@ func extractGithubRepoName(n string) (string, string, error) {
 	}
 	j += i + 1
 	return n[:j], n[j+1:], nil
+}
+
+func cloneRepo(repoName string) (string, error) {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		return "", fmt.Errorf("maybe no git program? (%w)", err)
+	}
+	tmpDir, err := os.MkdirTemp("", "mdrip-git-")
+	if err != nil {
+		return "", fmt.Errorf("unable to create tmp dir (%w)", err)
+	}
+	slog.Info("Cloning", "tmpDir", tmpDir, "repoName", repoName)
+	cmd := exec.Command(
+		gitPath, "clone", "https://github.com/"+repoName+dotGit, tmpDir)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err = cmd.Run(); err != nil {
+		return "", fmt.Errorf("git clone failure (%w)", err)
+	}
+	slog.Info("Clone complete.")
+	return tmpDir, nil
 }

@@ -1,30 +1,28 @@
 package loader_test
 
 import (
-	. "github.com/monopole/mdparse/internal/usegold/loader"
+	. "github.com/monopole/mdparse/internal/loader"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
 	"testing"
 )
 
-// A test to demonstrate the difference between
+// Demonstrate the difference between
 //
-//	dir, base = filepath.Dir(tc.arg), filepath.Base(tc.arg)
+//	dir, base = DirBase(tc.arg)
 //	dir, base = filepath.Split
-//	dir, base = FSplit
-func TestFsSplit(t *testing.T) {
+func TestDirBase(t *testing.T) {
 	type result struct {
 		dir  string
 		base string
 	}
 	type testC struct {
 		arg string
-		r0  *result // filepath.Dir(tc.arg), filepath.Base(tc.arg)
+		r0  *result // DirBase(tc.arg)
 		r1  *result // filepath.Split
-		r2  *result // FSplit
 	}
 	for n, tc := range map[string]testC{
-		"t0": { // good
+		"t0": {
 			arg: "../aaa/bbb/ccc",
 			r0: &result{
 				dir:  "../aaa/bbb",
@@ -34,12 +32,8 @@ func TestFsSplit(t *testing.T) {
 				dir:  "../aaa/bbb/",
 				base: "ccc",
 			},
-			r2: &result{
-				dir:  "../aaa/bbb",
-				base: "ccc",
-			},
 		},
-		"t1": { // good
+		"t1": {
 			arg: "/aaa/bbb/ccc",
 			r0: &result{
 				dir:  "/aaa/bbb",
@@ -49,20 +43,16 @@ func TestFsSplit(t *testing.T) {
 				dir:  "/aaa/bbb/",
 				base: "ccc",
 			},
-			r2: &result{
-				dir:  "/aaa/bbb", // no trailing slash
-				base: "ccc",
-			},
 		},
-		"t2": { // good
+		"t2": {
 			arg: "/bbb",
 			r0: &result{
 				dir:  "/",
 				base: "bbb",
 			},
-			// r2==r1==r0
+			// r1==r0
 		},
-		"t3": { // good
+		"t3": {
 			arg: "bbb",
 			r0: &result{
 				dir:  ".",
@@ -72,9 +62,8 @@ func TestFsSplit(t *testing.T) {
 				dir:  "",
 				base: "bbb",
 			},
-			// r2 == r1
 		},
-		"t4": { // good but we need to know it
+		"t4": {
 			arg: "",
 			r0: &result{
 				dir:  ".",
@@ -84,9 +73,8 @@ func TestFsSplit(t *testing.T) {
 				dir:  "",
 				base: "",
 			},
-			// r2 == r1
 		},
-		"t5": { // good but we need to know it
+		"t5": {
 			arg: "/",
 			r0: &result{
 				dir:  "/",
@@ -96,9 +84,8 @@ func TestFsSplit(t *testing.T) {
 				dir:  "/",
 				base: "",
 			},
-			// r2 == r1
 		},
-		"t6": { // good
+		"t6": {
 			arg: "./bob/sally",
 			r0: &result{
 				dir:  "bob",
@@ -108,12 +95,8 @@ func TestFsSplit(t *testing.T) {
 				dir:  "./bob/",
 				base: "sally",
 			},
-			r2: &result{
-				dir:  "bob", // no dot or trailing slash
-				base: "sally",
-			},
 		},
-		"t7": { // good
+		"t7": {
 			arg: "./bob",
 			r0: &result{
 				dir:  ".",
@@ -123,12 +106,8 @@ func TestFsSplit(t *testing.T) {
 				dir:  "./",
 				base: "bob",
 			},
-			r2: &result{
-				dir:  "", // no dot or trailing slash
-				base: "bob",
-			},
 		},
-		"t8": { // good but we need to know it
+		"t8": {
 			arg: ".",
 			r0: &result{
 				dir:  ".",
@@ -136,14 +115,10 @@ func TestFsSplit(t *testing.T) {
 			},
 			r1: &result{
 				dir:  "",
-				base: ".", // why does it do this?
-			},
-			r2: &result{
-				dir:  "",
-				base: "", // no dot
+				base: ".",
 			},
 		},
-		"t9": { // good but we need to know it
+		"t9": {
 			arg: "./",
 			r0: &result{
 				dir:  ".",
@@ -153,15 +128,11 @@ func TestFsSplit(t *testing.T) {
 				dir:  "./",
 				base: "",
 			},
-			r2: &result{
-				dir:  "", // no dot, no trailing slash
-				base: "",
-			},
 		},
 	} {
 		t.Run(n, func(t *testing.T) {
 			var dir, base string
-			dir, base = filepath.Dir(tc.arg), filepath.Base(tc.arg)
+			dir, base = DirBase(tc.arg)
 			assert.Equal(t, tc.r0.dir, dir)
 			assert.Equal(t, tc.r0.base, base)
 			dir, base = filepath.Split(tc.arg)
@@ -170,13 +141,6 @@ func TestFsSplit(t *testing.T) {
 			}
 			assert.Equal(t, tc.r1.dir, dir)
 			assert.Equal(t, tc.r1.base, base)
-			dir, base = FSplit(tc.arg)
-			if tc.r2 == nil {
-				tc.r2 = tc.r1 // same result
-			}
-			assert.Equal(t, tc.r2.dir, dir)
-			assert.Equal(t, tc.r2.base, base)
-
 		})
 	}
 }

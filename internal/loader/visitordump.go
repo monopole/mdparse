@@ -22,7 +22,7 @@ const blanks = "                                                                
 
 func (v *VisitorDump) VisitRepo(r *MyRepo) {
 	fmt.Print(blanks[:v.indent])
-	fmt.Printf("%s %s is in %s\n", r.name, r.path, r.tmpDir)
+	fmt.Printf("%s %s \n", r.name, r.path)
 	v.indent += 2
 	v.VisitFolder(r.folder)
 	v.indent -= 2

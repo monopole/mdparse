@@ -34,6 +34,13 @@ const (
 	upDir            = ".."
 )
 
+func (fsl *FsLoader) LoadTree(rawPath string) (tree MyTreeItem, err error) {
+	if smellsLikeGithubCloneArg(rawPath) {
+		return CloneAndLoadRepo(fsl, rawPath)
+	}
+	return fsl.LoadFolder(rawPath)
+}
+
 // LoadFolder loads the files at or below a path into memory, returning them
 // inside an MyFolder instance.
 //
@@ -80,6 +87,7 @@ const (
 //
 // Any error returned will be from the file system.
 func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
+	// If rawPath is empty, cleanPath ends up with "."
 	cleanPath := filepath.Clean(rawPath)
 
 	// For now, disallow paths that start with upDir, because in the task at
@@ -119,18 +127,7 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 		err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
 		return
 	}
-	dir, base := filepath.Dir(cleanPath), filepath.Base(cleanPath)
-	// Behavior:
-	//	        cleanPath  |       dir  | base
-	//	-------------------+------------+-----------
-	//	   {empty string}  |         .  |  .
-	//	                .  |         .  |  .
-	//	               ./  |         .  |  .
-	//                  /  |         /  |  /
-	//	            ./foo  |         .  | foo
-	//	           ../foo  |        ..  | foo
-	//	             /foo  |         /  | foo
-	//	   /usr/local/foo  | /usr/local | foo
+	dir, base := DirBase(cleanPath)
 	var c []byte
 	c, err = fsl.fs.ReadFile(cleanPath)
 	if err != nil {

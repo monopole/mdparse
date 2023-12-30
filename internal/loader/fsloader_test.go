@@ -2,9 +2,10 @@ package loader_test
 
 import (
 	"fmt"
-	. "github.com/monopole/mdparse/internal/usegold/loader"
+	. "github.com/monopole/mdparse/internal/loader"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"log/slog"
 	"os"
 	"testing"
 )
@@ -212,6 +213,14 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				return NewFolder(".").AddFileObject(md[0]).AddFolderObject(aaa)
 			},
 		},
+		"allOfSmallRelFsEmptyPath": {
+			fillFs:     makeSmallRelFs,
+			pathToLoad: "",
+			expectedFld: func() *MyFolder {
+				aaa := NewFolder("aaa").AddFileObject(md[1])
+				return NewFolder(".").AddFileObject(md[0]).AddFolderObject(aaa)
+			},
+		},
 		"fromMediumAbsEverything": {
 			fillFs:     makeMediumAbsFs,
 			pathToLoad: "/",
@@ -309,6 +318,103 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				t.Log("Expected:")
 				tc.expectedFld().Accept(NewVisitorDump(ldr))
 			}
+		})
+	}
+}
+
+const runTheUnportableLocalFileSystemDependentTests = false
+
+func TestLoadTree(t *testing.T) {
+	if !runTheUnportableLocalFileSystemDependentTests {
+		t.Skip("skipping non-portable tests")
+	}
+	type testC struct {
+		arg     string
+		topName string
+		errMsg  string
+	}
+	for n, tc := range map[string]testC{
+		"t1": {
+			arg:     "README.md",
+			topName: ".",
+		},
+		"t2": {
+			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader/README.md",
+			topName: "/home/jregan/myrepos/github.com/monopole/mdparse/internal/usegold/loader",
+		},
+		"t3": {
+			arg:     "/home/jregan/myrepos/github.com/monopole/mdparse",
+			topName: "/home/jregan/myrepos/github.com/monopole/mdparse",
+		},
+		"t4": {
+			arg:     ".",
+			topName: ".",
+		},
+		"t5": {
+			arg:    "/etc/passwd",
+			errMsg: "not a simple markdown file",
+		},
+		"t6": {
+			arg:    "/etc",
+			errMsg: "unable to read folder",
+		},
+	} {
+		t.Run(n, func(t *testing.T) {
+			fsl := NewFsLoader(afero.NewOsFs())
+			f, err := fsl.LoadTree(tc.arg)
+			if tc.errMsg != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errMsg)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.topName, f.Name())
+			f.Accept(NewVisitorDump(fsl))
+		})
+	}
+}
+
+func turnOnDebugging() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: false,
+		Level:     slog.LevelDebug,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey || a.Key == slog.LevelKey {
+				a.Value = slog.StringValue("")
+			}
+			return a
+		},
+	})))
+}
+
+const runRealGitHubTests = false
+
+func TestLoadTreeFromRepo(t *testing.T) {
+	if !runRealGitHubTests {
+		t.Skip("skipping real github tests")
+	}
+	turnOnDebugging()
+	type testC struct {
+		arg     string
+		topName string
+	}
+	for n, tc := range map[string]testC{
+		"gh1": {
+			arg:     "git@github.com:monopole/mdrip.git",
+			topName: "monopole/mdrip",
+		},
+		"gh2": {
+			arg:     "git@github.com:monopole/mdrip.git/data",
+			topName: "monopole/mdrip",
+		},
+	} {
+		t.Run(n, func(t *testing.T) {
+			// Must use a real FS, since the git command is used and it clones to real FS.
+			fsl := NewFsLoader(afero.NewOsFs())
+			f, err := fsl.LoadTree(tc.arg)
+			assert.NoError(t, err)
+			f.Accept(NewVisitorDump(fsl))
+			assert.Equal(t, tc.topName, f.Name())
 		})
 	}
 }

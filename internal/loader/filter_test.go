@@ -1,7 +1,7 @@
 package loader_test
 
 import (
-	. "github.com/monopole/mdparse/internal/usegold/loader"
+	. "github.com/monopole/mdparse/internal/loader"
 	"github.com/stretchr/testify/assert"
 	"io/fs"
 	"os"
