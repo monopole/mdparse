@@ -20,14 +20,6 @@ func NewVisitorDump(fsl *FsLoader) *VisitorDump {
 
 const blanks = "                                                                "
 
-func (v *VisitorDump) VisitRepo(r *MyRepo) {
-	fmt.Print(blanks[:v.indent])
-	fmt.Printf("%s %s \n", r.name, r.path)
-	v.indent += 2
-	v.VisitFolder(r.folder)
-	v.indent -= 2
-}
-
 func (v *VisitorDump) VisitFolder(fl *MyFolder) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Print(fl.name)

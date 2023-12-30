@@ -14,7 +14,6 @@ type MyTreeItem interface {
 
 // TreeVisitor has the ability to visit the items specified in its methods.
 type TreeVisitor interface {
-	VisitRepo(*MyRepo)
 	VisitFile(*MyFile)
 	VisitFolder(*MyFolder)
 }

@@ -12,42 +12,6 @@ import (
 
 const dotGit = ".git"
 
-// MyRepo is a named group of files and folders.
-type MyRepo struct {
-	// name is the URL of the repo, e.g.
-	// https://githu.com/monopole/mdrip
-	name string
-	// path is the path of interest inside the repo, ignore
-	// everything else.  If this is empty, take the whole
-	// repo module the content that doesn't pass filters.
-	path string
-
-	// Holds the repo.
-	folder *MyFolder
-}
-
-var _ MyTreeItem = &MyRepo{}
-
-func (r *MyRepo) Accept(v TreeVisitor) {
-	v.VisitRepo(r)
-}
-
-func (r *MyRepo) Parent() MyTreeItem {
-	return nil
-}
-
-func (r *MyRepo) Root() MyTreeItem {
-	return r
-}
-
-func (r *MyRepo) FullName() string {
-	return r.name
-}
-
-func (r *MyRepo) Name() string {
-	return r.name
-}
-
 // smellsLikeGithubCloneArg returns true if the argument seems
 // like it could be GitHub url or `git clone` argument.
 func smellsLikeGithubCloneArg(arg string) bool {
@@ -60,24 +24,23 @@ func smellsLikeGithubCloneArg(arg string) bool {
 // CloneAndLoadRepo clones a repo locally and loads it.
 // The FsLoader should be injected with a real file system,
 // since the git command line used here clones to real disk.
-func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyRepo, error) {
+func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyFolder, error) {
 	n, p, err := extractGithubRepoName(arg)
 	if err != nil {
 		return nil, err
 	}
-	r := &MyRepo{
-		name: n,
-		path: p,
-	}
-	var tmpDir string
-	tmpDir, err = cloneRepo(r.name)
+	var (
+		tmpDir string
+		fld    *MyFolder
+	)
+	tmpDir, err = cloneRepo(n)
 	if err != nil {
 		return nil, err
 	}
-	r.folder, err = fsl.LoadFolder(filepath.Join(tmpDir, r.path))
-	r.folder.name = r.path
+	fld, err = fsl.LoadFolder(filepath.Join(tmpDir, p))
+	fld.name = "[" + n + "]"
 	_ = os.RemoveAll(tmpDir)
-	return r, err
+	return fld, err
 }
 
 // extractGithubRepoName parses strings like git@github.com:monopole/mdrip.git or
