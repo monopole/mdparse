@@ -1,6 +1,7 @@
 package loader_test
 
 import (
+	"fmt"
 	. "github.com/monopole/mdparse/internal/usegold/loader"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -30,41 +31,61 @@ const (
 	RWX os.FileMode = 0755
 )
 
-// Define a bunch of markdown files and their contents.
-// Any file whose name ends in ".md" is considered a markdown file.
 var (
-	m0, m1, m2, m3 = NewFile("m0.md", []byte("# m0")),
-		NewFile("m1.md", []byte("# m1")),
-		NewFile("m2.md", []byte("# m2")),
-		NewFile("m3.md", []byte("# m3"))
+	md []*MyFile
 )
 
+// Define a bunch of markdown files and their contents.
+// A file whose name ends in ".md" is considered a markdown file.
+func init() {
+	md = make([]*MyFile, 11)
+	for i := range md {
+		md[i] = NewFile(fmt.Sprintf("f%02d.md", i), []byte(fmt.Sprintf("# file f%02d", i)))
+	}
+}
+
 func makeSmallAbsFs(t *testing.T, fs afero.Fs) {
-	assert.NoError(t, afero.WriteFile(fs, "/m0.md", m0.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "/aaa/m1.md", m1.C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/f00.md", md[0].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/f01.md", md[1].C(), RW))
 }
 
 func makeSmallRelFs(t *testing.T, fs afero.Fs) {
-	assert.NoError(t, afero.WriteFile(fs, "m0.md", m0.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "aaa/m1.md", m1.C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "f00.md", md[0].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "aaa/f01.md", md[1].C(), RW))
 }
 
 func makeMediumAbsFs(t *testing.T, fs afero.Fs) {
-	assert.NoError(t, afero.WriteFile(fs, "/m0.md", m0.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "/aaa/bbb/m1.md", m1.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "/aaa/m2.md", m2.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "/aaa/ccc/m3.md", m3.C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/f00.md", md[0].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/bbb/f01.md", md[1].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/f02.md", md[2].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/aaa/ccc/f03.md", md[3].C(), RW))
 	assert.NoError(t, afero.WriteFile(fs, "/aaa/ccc/ignore", []byte("not markdown"), RW))
 	assert.NoError(t, fs.MkdirAll("/aaa/empty", RWX))
 }
 
 func makeMediumRelFs(t *testing.T, fs afero.Fs) {
-	assert.NoError(t, afero.WriteFile(fs, "m0.md", m0.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "aaa/bbb/m1.md", m1.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "aaa/m2.md", m2.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "aaa/ccc/m3.md", m3.C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "f00.md", md[0].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "aaa/bbb/f01.md", md[1].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "aaa/f02.md", md[2].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "aaa/ccc/f03.md", md[3].C(), RW))
 	assert.NoError(t, afero.WriteFile(fs, "aaa/ccc/ignore", []byte("not markdown"), RW))
 	assert.NoError(t, fs.MkdirAll("aaa/empty", RWX))
+}
+
+func makeLargeAbsFs(t *testing.T, fs afero.Fs) {
+	assert.NoError(t, afero.WriteFile(fs, "/f10.md", md[10].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/mmm/yyy/f09.md", md[9].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/mmm/f08.md", md[8].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/mmm/eee/f07.md", md[7].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/mmm/eee/f06.md", md[6].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/mmm/eee/ignore", []byte("not markdown"), RW))
+	assert.NoError(t, fs.MkdirAll("/mmm/empty", RWX))
+	assert.NoError(t, afero.WriteFile(fs, "/jjj/bbb/f05.md", md[5].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/jjj/f04.md", md[4].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/jjj/ccc/f03.md", md[3].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/jjj/ccc/f02.md", md[2].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/jjj/aaa/f01.md", md[1].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/jjj/aaa/f00.md", md[0].C(), RW))
 }
 
 func TestAferoNonRootPath(t *testing.T) {
@@ -75,15 +96,15 @@ func TestAferoNonRootPath(t *testing.T) {
 	// There's no way to "cd" in the rootSlash file system,
 	// and have that change the behavior read/write.
 	fs := afero.NewMemMapFs() // afero.NewOsFs()
-	assert.NoError(t, afero.WriteFile(fs, "m0.md", m0.C(), RW))
-	assert.NoError(t, afero.WriteFile(fs, "/m1.md", m1.C(), RW))
-	data, err := afero.ReadFile(fs, "m0.md")
+	assert.NoError(t, afero.WriteFile(fs, "f00.md", md[0].C(), RW))
+	assert.NoError(t, afero.WriteFile(fs, "/f01.md", md[1].C(), RW))
+	data, err := afero.ReadFile(fs, "f00.md")
 	assert.NoError(t, err)
-	assert.Equal(t, m0.C(), data)
-	data, err = afero.ReadFile(fs, "/m1.md")
+	assert.Equal(t, md[0].C(), data)
+	data, err = afero.ReadFile(fs, "/f01.md")
 	assert.NoError(t, err)
-	assert.Equal(t, m1.C(), data)
-	_, err = afero.ReadFile(fs, "m1.md")
+	assert.Equal(t, md[1].C(), data)
+	_, err = afero.ReadFile(fs, "f01.md")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "file does not exist")
 }
@@ -124,18 +145,18 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 		},
 		"oneFile": {
 			fillFs: func(tt *testing.T, fs afero.Fs) {
-				assert.NoError(tt, afero.WriteFile(fs, "/m1.md", m1.C(), RW))
+				assert.NoError(tt, afero.WriteFile(fs, "/f01.md", md[1].C(), RW))
 			},
-			pathToLoad: "/m1.md",
+			pathToLoad: "/f01.md",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/").AddFileObject(m1)
+				return NewFolder("/").AddFileObject(md[1])
 			},
 		},
 		"oneFileButAskForWrongFile": {
 			fillFs: func(tt *testing.T, fs afero.Fs) {
-				assert.NoError(tt, afero.WriteFile(fs, "/m1.md", m1.C(), RW))
+				assert.NoError(tt, afero.WriteFile(fs, "/f01.md", md[1].C(), RW))
 			},
-			pathToLoad: "/m2.md",
+			pathToLoad: "/f02.md",
 			errMsg:     "file does not exist",
 		},
 		"oneEmptyFolder": {
@@ -156,85 +177,98 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				return nil
 			},
 		},
-		"justOneDir": {
+		"justOneDirWithOneFile": {
 			fillFs: func(tt *testing.T, fs afero.Fs) {
-				assert.NoError(tt, afero.WriteFile(fs, "/aaa/m1.md", m1.C(), RW))
+				assert.NoError(tt, afero.WriteFile(fs, "/aaa/f01.md", md[1].C(), RW))
 			},
 			pathToLoad: "/",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/").AddFolderObject(NewFolder("aaa").AddFileObject(m1))
+				return NewFolder("/").AddFolderObject(NewFolder("aaa").AddFileObject(md[1]))
 			},
 		},
 		"justOneSubDir": {
 			fillFs: func(tt *testing.T, fs afero.Fs) {
-				assert.NoError(tt, afero.WriteFile(fs, "/aaa/m1.md", m1.C(), RW))
+				assert.NoError(tt, afero.WriteFile(fs, "/aaa/f01.md", md[1].C(), RW))
 			},
 			pathToLoad: "/aaa",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/").AddFolderObject(NewFolder("aaa").AddFileObject(m1))
+				return NewFolder("/aaa").AddFileObject(md[1])
 			},
 		},
 		"allOfSmallAbsFs": {
 			fillFs:     makeSmallAbsFs,
 			pathToLoad: "/",
 			expectedFld: func() *MyFolder {
-				aaa := NewFolder("aaa").AddFileObject(m1)
-				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
+				aaa := NewFolder("aaa").AddFileObject(md[1])
+				return NewFolder("/").AddFileObject(md[0]).AddFolderObject(aaa)
 			},
 		},
 		"allOfSmallRelFs": {
 			fillFs:     makeSmallRelFs,
 			pathToLoad: ".",
 			expectedFld: func() *MyFolder {
-				aaa := NewFolder("aaa").AddFileObject(m1)
-				return NewFolder(".").AddFileObject(m0).AddFolderObject(aaa)
+				aaa := NewFolder("aaa").AddFileObject(md[1])
+				return NewFolder(".").AddFileObject(md[0]).AddFolderObject(aaa)
 			},
 		},
 		"fromMediumAbsEverything": {
 			fillFs:     makeMediumAbsFs,
 			pathToLoad: "/",
 			expectedFld: func() *MyFolder {
-				ccc := NewFolder("ccc").AddFileObject(m3)
-				bbb := NewFolder("bbb").AddFileObject(m1)
-				aaa := NewFolder("aaa").AddFileObject(m2).
+				ccc := NewFolder("ccc").AddFileObject(md[3])
+				bbb := NewFolder("bbb").AddFileObject(md[1])
+				aaa := NewFolder("aaa").AddFileObject(md[2]).
 					AddFolderObject(bbb).AddFolderObject(ccc)
-				return NewFolder("/").AddFileObject(m0).AddFolderObject(aaa)
+				return NewFolder("/").AddFileObject(md[0]).AddFolderObject(aaa)
 			},
 		},
 		"fromMediumRelEverything": {
 			fillFs:     makeMediumRelFs,
 			pathToLoad: ".",
 			expectedFld: func() *MyFolder {
-				ccc := NewFolder("ccc").AddFileObject(m3)
-				bbb := NewFolder("bbb").AddFileObject(m1)
-				aaa := NewFolder("aaa").AddFileObject(m2).
+				ccc := NewFolder("ccc").AddFileObject(md[3])
+				bbb := NewFolder("bbb").AddFileObject(md[1])
+				aaa := NewFolder("aaa").AddFileObject(md[2]).
 					AddFolderObject(bbb).AddFolderObject(ccc)
-				return NewFolder(".").AddFileObject(m0).AddFolderObject(aaa)
+				return NewFolder(".").AddFileObject(md[0]).AddFolderObject(aaa)
 			},
 		},
 		"fromMediumAbsJustAAA": {
 			fillFs:     makeMediumAbsFs,
 			pathToLoad: "/aaa",
 			expectedFld: func() *MyFolder {
-				ccc := NewFolder("ccc").AddFileObject(m3)
-				bbb := NewFolder("bbb").AddFileObject(m1)
-				aaa := NewFolder("aaa").AddFileObject(m2).
+				ccc := NewFolder("ccc").AddFileObject(md[3])
+				bbb := NewFolder("bbb").AddFileObject(md[1])
+				return NewFolder("/aaa").AddFileObject(md[2]).
 					AddFolderObject(bbb).AddFolderObject(ccc)
-				return NewFolder("/").AddFolderObject(aaa)
 			},
 		},
 		"fromMediumAbsJustM0": {
 			fillFs:     makeMediumAbsFs,
-			pathToLoad: "/m0.md",
+			pathToLoad: "/f00.md",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/").AddFileObject(m0)
+				return NewFolder("/").AddFileObject(md[0])
 			},
 		},
 		"fromMediumAbsJustM3": {
 			fillFs:     makeMediumAbsFs,
-			pathToLoad: "/aaa/ccc/m3.md",
+			pathToLoad: "/aaa/ccc/f03.md",
 			expectedFld: func() *MyFolder {
-				return NewFolder("/aaa/ccc").AddFileObject(m3)
+				return NewFolder("/aaa/ccc").AddFileObject(md[3])
+			},
+		},
+		"fromLargeAbsEverything": {
+			fillFs:     makeLargeAbsFs,
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				yyy := NewFolder("yyy").AddFileObject(md[9])
+				eee := NewFolder("eee").AddFileObject(md[6]).AddFileObject(md[7])
+				bbb := NewFolder("bbb").AddFileObject(md[5])
+				ccc := NewFolder("ccc").AddFileObject(md[2]).AddFileObject(md[3])
+				aaa := NewFolder("aaa").AddFileObject(md[0]).AddFileObject(md[1])
+				mmm := NewFolder("mmm").AddFileObject(md[8]).AddFolderObject(eee).AddFolderObject(yyy)
+				jjj := NewFolder("jjj").AddFileObject(md[4]).AddFolderObject(aaa).AddFolderObject(bbb).AddFolderObject(ccc)
+				return NewFolder("/").AddFileObject(md[10]).AddFolderObject(jjj).AddFolderObject(mmm)
 			},
 		},
 	} {

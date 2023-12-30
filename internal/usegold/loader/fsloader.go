@@ -3,7 +3,6 @@ package loader
 import (
 	"fmt"
 	"github.com/spf13/afero"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -107,8 +106,6 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	//	             /foo  |         /  | foo
 	//	   /usr/local/foo  | /usr/local | foo
 
-	fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
-
 	if !info.IsDir() {
 		if err = fsl.IsAllowedFile(info); err != nil {
 			// If user explicitly asked for a disallowed file, complain.
@@ -116,7 +113,16 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 			err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
 			return
 		}
-		err = fsl.loadSubFile(fld, base)
+		if base != info.Name() {
+			panic("assumption 1 about filepath.Base vs filepath.Dir broken")
+		}
+		fi := NewEmptyFile(base)
+		fi.content, err = fsl.fs.ReadFile(cleanPath)
+		if err != nil {
+			return nil, err
+		}
+		fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
+		fld.AddFileObject(fi)
 		return
 	}
 	if err = fsl.IsAllowedFolder(info); err != nil {
@@ -127,86 +133,87 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	}
 	if base == rootSlash || base == currentDir {
 		if dir != base {
-			panic("assumption about filepath.Base vs filepath.Dir broken")
+			panic("assumption 2 about filepath.Base vs filepath.Dir broken")
 		}
-		fld, err = fsl.loadSubFolder(nil, base)
+		fld, err = fsl.loadPath(cleanPath)
+		if err != nil {
+			return
+		}
 		if fld != nil {
 			fld.name = base
 		}
 		return
 	}
-	_, err = fsl.loadSubFolder(fld, base)
+	fld, err = fsl.loadPath(cleanPath)
+	if err != nil {
+		return
+	}
+	if fld != nil {
+		fld.name = cleanPath
+	}
 	if fld.IsEmpty() {
 		fld = nil
 	}
 	return
 }
 
-// loadSubFolder returns a fully loaded MyFolder instance.
-// The arguments are a parent folder, and the simple name of a folder inside
-// the parent - no path separators in the folderName.
-// The parent's name must be either a full absolute path or a relative
-// path that makes sense with respect to the process' working directory.
-// This function returns a new folder object - the loaded sub-folder.
-// It knows its parent, and the parent knows about it.
-func (fsl *FsLoader) loadSubFolder(
-	parent *MyFolder, folderName string) (*MyFolder, error) {
+// loadPath loads from the path, returning an instance of MyFolder.
+func (fsl *FsLoader) loadPath(path string) (*MyFolder, error) {
 	var (
-		fld      MyFolder
+		result   MyFolder
+		subFld   *MyFolder
 		ordering []string
-		fullName string
 	)
-	if parent == nil {
-		fullName = folderName
-	} else {
-		fullName = filepath.Join(parent.FullName(), folderName)
-		fld.parent = parent
-	}
-	dirEntries, err := fsl.fs.ReadDir(fullName)
+	dirEntries, err := fsl.fs.ReadDir(path)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"unable to read folder %q; %w", fullName, err)
+			"unable to read folder %q; %w", path, err)
 	}
-	fld.name = folderName
 	for i := range dirEntries {
 		info := dirEntries[i]
 		if info.IsDir() {
 			if err = fsl.IsAllowedFolder(info); err == nil {
-				if _, err = fsl.loadSubFolder(&fld, info.Name()); err != nil {
+				subPath := filepath.Join(path, info.Name())
+				if subFld, err = fsl.loadPath(subPath); err != nil {
 					return nil, err
+				}
+				if !subFld.IsEmpty() {
+					subFld.name = info.Name()
+					result.AddFolderObject(subFld)
 				}
 			}
 			continue
 		}
 		if IsOrderingFile(info) {
-			ordering, err = LoadOrderFile(info)
-			if err != nil {
+			// load it and keep it for use at end of function.
+			// TODO: test this.  i don't think the path is correct
+			if ordering, err = LoadOrderFile(info); err != nil {
 				return nil, err
 			}
 			continue
 		}
 		if err = fsl.IsAllowedFile(info); err == nil {
-			if err = fsl.loadSubFile(&fld, info.Name()); err != nil {
+			fi := NewEmptyFile(info.Name())
+			subPath := filepath.Join(path, info.Name())
+			fi.content, err = fsl.fs.ReadFile(subPath)
+			if err != nil {
 				return nil, err
 			}
+			result.AddFileObject(fi)
 		}
 	}
-	if fld.IsEmpty() {
-		slog.Debug("omitting empty directory", "dir", fld.FullName())
+	if result.IsEmpty() {
 		return nil, nil
 	}
-	fld.files = ReorderFiles(fld.files, ordering)
-	fld.dirs = ReorderFolders(fld.dirs, ordering)
-	if parent != nil {
-		parent.dirs = append(parent.dirs, &fld)
-	}
-	return &fld, nil
+	result.files = ReorderFiles(result.files, ordering)
+	result.dirs = ReorderFolders(result.dirs, ordering)
+	return &result, nil
 }
 
-// loadSubFile loads a file into a folder.
-func (fsl *FsLoader) loadSubFile(fld *MyFolder, n string) (err error) {
-	fi := NewEmptyFile(n)
-	fld.AddFileObject(fi)
-	fi.content, err = fsl.fs.ReadFile(fi.FullName())
-	return
-}
+//// loadSubFile loads a file into a folder.
+//func (fsl *FsLoader) loadSubFile(fld *MyFolder, n string) (err error) {
+//	fi := NewEmptyFile(n)
+//	fld.AddFileObject(fi)
+//	fi.content, err = fsl.fs.ReadFile(fi.FullName())
+//	return
+//}
