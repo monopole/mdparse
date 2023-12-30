@@ -32,7 +32,8 @@ const (
 )
 
 var (
-	md []*MyFile
+	md       []*MyFile
+	readmeMd = NewFile(ReadmeFileName, []byte("# Howdy!"))
 )
 
 // Define a bunch of markdown files and their contents.
@@ -268,6 +269,24 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 				aaa := NewFolder("aaa").AddFileObject(md[0]).AddFileObject(md[1])
 				mmm := NewFolder("mmm").AddFileObject(md[8]).AddFolderObject(eee).AddFolderObject(yyy)
 				jjj := NewFolder("jjj").AddFileObject(md[4]).AddFolderObject(aaa).AddFolderObject(bbb).AddFolderObject(ccc)
+				return NewFolder("/").AddFileObject(md[10]).AddFolderObject(jjj).AddFolderObject(mmm)
+			},
+		},
+		"fromLargeAbsEverythingWithReordering": {
+			fillFs: func(tt *testing.T, fs afero.Fs) {
+				makeLargeAbsFs(tt, fs)
+				assert.NoError(tt, afero.WriteFile(fs, "/jjj/"+OrderingFileName, []byte("ccc\nbbb\naaa"), RW))
+				assert.NoError(tt, afero.WriteFile(fs, "/mmm/eee/"+readmeMd.Name(), readmeMd.C(), RW))
+			},
+			pathToLoad: "/",
+			expectedFld: func() *MyFolder {
+				yyy := NewFolder("yyy").AddFileObject(md[9])
+				eee := NewFolder("eee").AddFileObject(readmeMd).AddFileObject(md[6]).AddFileObject(md[7])
+				bbb := NewFolder("bbb").AddFileObject(md[5])
+				ccc := NewFolder("ccc").AddFileObject(md[2]).AddFileObject(md[3])
+				aaa := NewFolder("aaa").AddFileObject(md[0]).AddFileObject(md[1])
+				mmm := NewFolder("mmm").AddFileObject(md[8]).AddFolderObject(eee).AddFolderObject(yyy)
+				jjj := NewFolder("jjj").AddFileObject(md[4]).AddFolderObject(ccc).AddFolderObject(bbb).AddFolderObject(aaa)
 				return NewFolder("/").AddFileObject(md[10]).AddFolderObject(jjj).AddFolderObject(mmm)
 			},
 		},

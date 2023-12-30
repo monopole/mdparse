@@ -1,14 +1,13 @@
 package loader
 
 import (
+	"github.com/spf13/afero"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
-// IsOrderingFile returns true if the file appears to be an "order"
-// file specifying how to re-order the files in the directory
-// in some fashion other than normal directory order.
+// IsOrderingFile returns true if the file appears to be an "ordering" file
+// specifying which files should come first in a directory.
 func IsOrderingFile(info os.FileInfo) bool {
 	if info.IsDir() {
 		return false
@@ -16,12 +15,12 @@ func IsOrderingFile(info os.FileInfo) bool {
 	if !info.Mode().IsRegular() {
 		return false
 	}
-	return filepath.Base(info.Name()) == orderingFile
+	return info.Name() == OrderingFileName
 }
 
 // LoadOrderFile returns a list of names specify file name order priority.
-func LoadOrderFile(info os.FileInfo) ([]string, error) {
-	contents, err := os.ReadFile(info.Name())
+func LoadOrderFile(fs *afero.Afero, path string) ([]string, error) {
+	contents, err := fs.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -30,12 +29,12 @@ func LoadOrderFile(info os.FileInfo) ([]string, error) {
 
 func ReorderFolders(x []*MyFolder, ordering []string) []*MyFolder {
 	for i := len(ordering) - 1; i >= 0; i-- {
-		x = ShiftFolderToTop(x, ordering[i])
+		x = shiftFolderToTop(x, ordering[i])
 	}
 	return x
 }
 
-func ShiftFolderToTop(x []*MyFolder, top string) []*MyFolder {
+func shiftFolderToTop(x []*MyFolder, top string) []*MyFolder {
 	var first []*MyFolder
 	var remainder []*MyFolder
 	for _, f := range x {
@@ -50,12 +49,12 @@ func ShiftFolderToTop(x []*MyFolder, top string) []*MyFolder {
 
 func ReorderFiles(x []*MyFile, ordering []string) []*MyFile {
 	for i := len(ordering) - 1; i >= 0; i-- {
-		x = ShiftFileToTop(x, ordering[i])
+		x = shiftFileToTop(x, ordering[i])
 	}
-	return ShiftFileToTop(x, "README")
+	return shiftFileToTop(x, "README.md")
 }
 
-func ShiftFileToTop(x []*MyFile, top string) []*MyFile {
+func shiftFileToTop(x []*MyFile, top string) []*MyFile {
 	var first []*MyFile
 	var remainder []*MyFile
 	for _, f := range x {

@@ -26,11 +26,12 @@ func NewFsLoader(fs afero.Fs) *FsLoader {
 }
 
 const (
-	orderingFile = "README_ORDER.txt"
-	rootSlash    = string(filepath.Separator)
-	currentDir   = "."
-	selfPath     = currentDir + rootSlash
-	upDir        = ".."
+	ReadmeFileName   = "README.md"
+	OrderingFileName = "README_ORDER.txt"
+	rootSlash        = string(filepath.Separator)
+	currentDir       = "."
+	selfPath         = currentDir + rootSlash
+	upDir            = ".."
 )
 
 // LoadFolder loads the files at or below a path into memory, returning them
@@ -40,7 +41,7 @@ const (
 // If filtering leaves a folder empty, it is discarded.  If nothing
 // makes it through, the function returns a nil folder and no error.
 //
-// If an "orderingFile" is found in a directory, it's used to sort the files
+// If an "OrderingFileName" is found in a directory, it's used to sort the files
 // and sub-folders in that folder's in-memory representation. An ordering file
 // is just lines of text, one name per line. Ordered files appear first, with
 // the remainder in the order imposed by fs.ReadDir.
@@ -93,9 +94,34 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	if err != nil {
 		return
 	}
+
+	if info.IsDir() {
+		if err = fsl.IsAllowedFolder(info); err != nil {
+			// If user explicitly asked for a disallowed folder, complain.
+			// Deeper in, when absorbing folders, they are simply ignored.
+			err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
+			return
+		}
+		fld, err = fsl.loadFolder(cleanPath)
+		if err != nil {
+			return
+		}
+		if !fld.IsEmpty() {
+			fld.name = cleanPath
+			return
+		}
+		return nil, nil
+	}
+	// Load just one file.
+	if err = fsl.IsAllowedFile(info); err != nil {
+		// If user explicitly asked for a disallowed file, complain.
+		// Deeper in, when absorbing folders, they are simply ignored.
+		err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
+		return
+	}
 	dir, base := filepath.Dir(cleanPath), filepath.Base(cleanPath)
 	// Behavior:
-	//	             path  |       dir  | base
+	//	        cleanPath  |       dir  | base
 	//	-------------------+------------+-----------
 	//	   {empty string}  |         .  |  .
 	//	                .  |         .  |  .
@@ -105,60 +131,38 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 	//	           ../foo  |        ..  | foo
 	//	             /foo  |         /  | foo
 	//	   /usr/local/foo  | /usr/local | foo
-
-	if !info.IsDir() {
-		if err = fsl.IsAllowedFile(info); err != nil {
-			// If user explicitly asked for a disallowed file, complain.
-			// Deeper in, when absorbing folders, they are simply ignored.
-			err = fmt.Errorf("illegal file %q; %w", info.Name(), err)
-			return
-		}
-		if base != info.Name() {
-			panic("assumption 1 about filepath.Base vs filepath.Dir broken")
-		}
-		fi := NewEmptyFile(base)
-		fi.content, err = fsl.fs.ReadFile(cleanPath)
-		if err != nil {
-			return nil, err
-		}
-		fld = &MyFolder{myTreeItem: myTreeItem{name: dir}}
-		fld.AddFileObject(fi)
-		return
-	}
-	if err = fsl.IsAllowedFolder(info); err != nil {
-		// If user explicitly asked for a disallowed folder, complain.
-		// Deeper in, when absorbing folders, they are simply ignored.
-		err = fmt.Errorf("illegal folder %q; %w", info.Name(), err)
-		return
-	}
-	if base == rootSlash || base == currentDir {
-		if dir != base {
-			panic("assumption 2 about filepath.Base vs filepath.Dir broken")
-		}
-		fld, err = fsl.loadPath(cleanPath)
-		if err != nil {
-			return
-		}
-		if fld != nil {
-			fld.name = base
-		}
-		return
-	}
-	fld, err = fsl.loadPath(cleanPath)
+	fi := NewEmptyFile(base)
+	fi.content, err = fsl.fs.ReadFile(cleanPath)
 	if err != nil {
-		return
+		return nil, err
 	}
-	if fld != nil {
-		fld.name = cleanPath
-	}
-	if fld.IsEmpty() {
-		fld = nil
-	}
+	fld = NewFolder(dir).AddFileObject(fi)
 	return
 }
 
-// loadPath loads from the path, returning an instance of MyFolder.
-func (fsl *FsLoader) loadPath(path string) (*MyFolder, error) {
+// loadFolder loads the folder specified by the path.
+// The path must point to a folder.
+// For example, given a file system like
+//
+//	home/bob/
+//	  f1.md
+//	  games/
+//	    doom.md
+//
+// The argument /home/bob should yield an unnamed, unparented folder containing
+// 'f1.md' and the folder 'game' (with 'doom.md' inside 'game').
+//
+// The same thing is returned if the file system is
+//
+//	./
+//	  f1.md
+//	  games/
+//	    doom.md
+//
+// and the argument passed in is simply ".".
+//
+// This is the recursive part of the LoadFolder entrypoint.
+func (fsl *FsLoader) loadFolder(path string) (*MyFolder, error) {
 	var (
 		result   MyFolder
 		subFld   *MyFolder
@@ -171,10 +175,10 @@ func (fsl *FsLoader) loadPath(path string) (*MyFolder, error) {
 	}
 	for i := range dirEntries {
 		info := dirEntries[i]
+		subPath := filepath.Join(path, info.Name())
 		if info.IsDir() {
 			if err = fsl.IsAllowedFolder(info); err == nil {
-				subPath := filepath.Join(path, info.Name())
-				if subFld, err = fsl.loadPath(subPath); err != nil {
+				if subFld, err = fsl.loadFolder(subPath); err != nil {
 					return nil, err
 				}
 				if !subFld.IsEmpty() {
@@ -186,15 +190,13 @@ func (fsl *FsLoader) loadPath(path string) (*MyFolder, error) {
 		}
 		if IsOrderingFile(info) {
 			// load it and keep it for use at end of function.
-			// TODO: test this.  i don't think the path is correct
-			if ordering, err = LoadOrderFile(info); err != nil {
+			if ordering, err = LoadOrderFile(fsl.fs, subPath); err != nil {
 				return nil, err
 			}
 			continue
 		}
 		if err = fsl.IsAllowedFile(info); err == nil {
 			fi := NewEmptyFile(info.Name())
-			subPath := filepath.Join(path, info.Name())
 			fi.content, err = fsl.fs.ReadFile(subPath)
 			if err != nil {
 				return nil, err
@@ -209,11 +211,3 @@ func (fsl *FsLoader) loadPath(path string) (*MyFolder, error) {
 	result.dirs = ReorderFolders(result.dirs, ordering)
 	return &result, nil
 }
-
-//// loadSubFile loads a file into a folder.
-//func (fsl *FsLoader) loadSubFile(fld *MyFolder, n string) (err error) {
-//	fi := NewEmptyFile(n)
-//	fld.AddFileObject(fi)
-//	fi.content, err = fsl.fs.ReadFile(fi.FullName())
-//	return
-//}
