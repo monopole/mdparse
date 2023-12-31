@@ -20,9 +20,8 @@ func IsMarkDownFile(info os.FileInfo) error {
 	if filepath.Ext(info.Name()) != ".md" {
 		return NotMarkDownErr
 	}
-	base := filepath.Base(info.Name())
 	const badLeadingChar = "~.#"
-	if strings.Index(badLeadingChar, string(base[0])) >= 0 {
+	if strings.Index(badLeadingChar, string(info.Name()[0])) >= 0 {
 		return NotMarkDownErr
 	}
 	return nil
@@ -38,8 +37,7 @@ func IsNotADotDir(info os.FileInfo) error {
 		return nil
 	}
 	// Ignore .git, etc.
-	base := filepath.Base(n)
-	if len(base) > 1 && string(base[0]) == currentDir {
+	if len(n) > 1 && string(n[0]) == currentDir {
 		return IsADotDirErr
 	}
 	return nil
