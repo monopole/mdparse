@@ -401,11 +401,15 @@ func TestLoadTreeFromRepo(t *testing.T) {
 	for n, tc := range map[string]testC{
 		"gh1": {
 			arg:     "git@github.com:monopole/mdrip.git",
-			topName: "monopole/mdrip",
+			topName: "git@github.com:monopole/mdrip",
 		},
 		"gh2": {
+			arg:     "git@github.com:monopole/mdrip.git/README.md",
+			topName: "git@github.com:monopole/mdrip/README.md",
+		},
+		"gh3": {
 			arg:     "git@github.com:monopole/mdrip.git/data",
-			topName: "monopole/mdrip",
+			topName: "git@github.com:monopole/mdrip/data",
 		},
 	} {
 		t.Run(n, func(t *testing.T) {

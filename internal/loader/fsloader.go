@@ -34,7 +34,8 @@ const (
 	upDir            = ".."
 )
 
-func (fsl *FsLoader) LoadTree(rawPath string) (tree MyTreeItem, err error) {
+// LoadTree loads a file tree from disk, possibly after first cloning a repo from GitHub.
+func (fsl *FsLoader) LoadTree(rawPath string) (*MyFolder, error) {
 	if smellsLikeGithubCloneArg(rawPath) {
 		return CloneAndLoadRepo(fsl, rawPath)
 	}
@@ -138,10 +139,11 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 }
 
 // loadFolder loads the folder specified by the path.
+// This is the recursive part of the LoadFolder entrypoint.
 // The path must point to a folder.
 // For example, given a file system like
 //
-//	home/bob/
+//	/home/bob/
 //	  f1.md
 //	  games/
 //	    doom.md
@@ -156,9 +158,7 @@ func (fsl *FsLoader) LoadFolder(rawPath string) (fld *MyFolder, err error) {
 //	  games/
 //	    doom.md
 //
-// and the argument passed in is simply ".".
-//
-// This is the recursive part of the LoadFolder entrypoint.
+// and the argument passed in is simply "." or an empty string.
 func (fsl *FsLoader) loadFolder(path string) (*MyFolder, error) {
 	var (
 		result   MyFolder

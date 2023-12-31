@@ -25,7 +25,8 @@ func smellsLikeGithubCloneArg(arg string) bool {
 // The FsLoader should be injected with a real file system,
 // since the git command line used here clones to real disk.
 func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyFolder, error) {
-	n, p, err := extractGithubRepoName(arg)
+	d, n := splitDomainAndRepo(arg)
+	r, p, err := splitRepoAndPath(n)
 	if err != nil {
 		return nil, err
 	}
@@ -33,34 +34,41 @@ func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyFolder, error) {
 		tmpDir string
 		fld    *MyFolder
 	)
-	tmpDir, err = cloneRepo(n)
+	tmpDir, err = cloneRepo(d, r)
 	if err != nil {
 		return nil, err
 	}
 	fld, err = fsl.LoadFolder(filepath.Join(tmpDir, p))
-	fld.name = "[" + n + "]"
+	if p == "" {
+		fld.name = d + r
+	} else {
+		fld.name = d + r + rootSlash + p
+	}
 	_ = os.RemoveAll(tmpDir)
 	return fld, err
 }
 
-// extractGithubRepoName parses strings like git@github.com:monopole/mdrip.git or
-// https://github.com/monopole/mdrip, extracting the repository name
+// splitRepoAndPath parses strings like monopole/mdrip.git/somepath or
+// monopole/mdrip, splitting the repository name
 // and the path inside the repository.
-func extractGithubRepoName(n string) (string, string, error) {
-	for _, p := range []string{
-		// Order matters here.
-		"gh:", "https://", "http://", "git@", "github.com:", "github.com/"} {
-		if strings.ToLower(n[:len(p)]) == p {
-			n = n[len(p):]
+func splitRepoAndPath(n string) (string, string, error) {
+	if i := strings.Index(n, dotGit); i > 0 {
+		r := n[:i]
+		after := n[i+len(dotGit):]
+		if len(after) > 1 {
+			if !strings.HasPrefix(after, "/") {
+				return "", "", fmt.Errorf("no path separator in github spec")
+			}
+			return r, after[1:], nil
 		}
-	}
-	if strings.HasSuffix(n, dotGit) {
-		n = n[0 : len(n)-len(dotGit)]
+		return r, "", nil
 	}
 	i := strings.Index(n, "/")
 	if i < 1 {
-		return "", "", fmt.Errorf("no separator in github spec")
+		// expect ORGANIZATION/REPONAME
+		return "", "", fmt.Errorf("no org/repo separator in github spec")
 	}
+	// Now look for a second path separator
 	j := strings.Index(n[i+1:], "/")
 	if j < 0 {
 		// No path, so show entire repo.
@@ -70,7 +78,25 @@ func extractGithubRepoName(n string) (string, string, error) {
 	return n[:j], n[j+1:], nil
 }
 
-func cloneRepo(repoName string) (string, error) {
+func splitDomainAndRepo(raw string) (string, string) {
+	n := strings.ToLower(raw)
+	{
+		p := "gh:"
+		if n[:len(p)] == p {
+			return "git@github.com:", raw[len(p):]
+		}
+	}
+	// try any domain-like thing
+	for _, p := range []string{".com/", ".com:"} {
+		if i := strings.Index(n, p); i > 0 {
+			return n[:i+len(p)], raw[i+len(p):]
+		}
+	}
+	// err?
+	return raw, ""
+}
+
+func cloneRepo(domain, repoName string) (string, error) {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		return "", fmt.Errorf("maybe no git program? (%w)", err)
@@ -79,9 +105,9 @@ func cloneRepo(repoName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to create tmp dir (%w)", err)
 	}
-	slog.Info("Cloning", "tmpDir", tmpDir, "repoName", repoName)
+	slog.Info("Cloning", "tmpDir", tmpDir, "domain", domain, "repoName", repoName)
 	cmd := exec.Command(
-		gitPath, "clone", "https://github.com/"+repoName+dotGit, tmpDir)
+		gitPath, "clone", domain+repoName+dotGit, tmpDir)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err = cmd.Run(); err != nil {
