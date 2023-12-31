@@ -3,16 +3,17 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"github.com/monopole/mdparse/internal/loader"
+	"github.com/spf13/afero"
 	"os"
 
-	"github.com/monopole/mdparse/internal/file"
 	"github.com/monopole/mdparse/internal/ifc"
 	"github.com/monopole/mdparse/internal/useblue"
 	"github.com/monopole/mdparse/internal/usegold"
 	"github.com/spf13/cobra"
 )
 
-//go:embed internal/usegold/model/testdata/small.md
+//go:embed internal/usegold/accum/testdata/small.md
 var mds string
 
 const (
@@ -45,17 +46,23 @@ func main() {
 
 func newCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "mdparse {fileName}",
-		Short: shortHelp,
-		Long:  shortHelp + " " + version,
-		Example: "  mdparse " + file.DefaultConfigFileName() + `
-
-`,
+		Use:     "mdparse {fileName}",
+		Short:   shortHelp,
+		Long:    shortHelp + " " + version,
+		Example: "  mdparse some/directory",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			//var f loader.MyContrivedFolder
-			//if err = f.Initialize(args, loader.DefaultFsLoader); err != nil {
-			//	return
-			//}
+			if len(args) > 1 {
+				return fmt.Errorf("specify only one path or repo")
+			}
+			arg := ""
+			if len(args) == 1 {
+				arg = args[0]
+			}
+			ldr := loader.NewFsLoader(afero.NewOsFs())
+			_, err = ldr.LoadFolder(arg)
+			if err != nil {
+				return err
+			}
 			var m ifc.Marker
 			if useGoldmark := true; useGoldmark {
 				// https://github.com/yuin/goldmark
@@ -91,9 +98,10 @@ func newCommand() *cobra.Command {
 				//   - It has zero official releases.
 				m = useblue.NewMarker(doMyStuff)
 			}
-			//if err = m.Load(&f); err != nil {
-			//	return
-			//}
+			// try:   go run . internal/loader/README.md
+			if err = m.Load([]byte(mds)); err != nil {
+				return
+			}
 			m.Dump()
 			var s string
 			s, err = m.Render()

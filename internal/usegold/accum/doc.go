@@ -1,6 +1,6 @@
 package accum
 
-// Package model has types used to build a tutorial from discovered markdown.
+// Package accum has types used to build a tutorial from discovered markdown.
 //
 // The file hierarchy holding the markdown defines tutorial structure,
 // organizing markdown files (lessons) into nestable groups (courses).

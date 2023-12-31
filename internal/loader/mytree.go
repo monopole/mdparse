@@ -18,6 +18,7 @@ type TreeVisitor interface {
 	VisitFolder(*MyFolder)
 }
 
+// myTreeItem is the commonality between a file and a folder
 type myTreeItem struct {
 	parent MyTreeItem
 	name   string
@@ -35,6 +36,7 @@ func (ti *myTreeItem) Root() MyTreeItem {
 	return ti.parent.Root()
 }
 
+// Name is the base name of the item.
 func (ti *myTreeItem) Name() string {
 	if ti == nil {
 		return ""
@@ -42,10 +44,7 @@ func (ti *myTreeItem) Name() string {
 	return ti.name
 }
 
-func (ti *myTreeItem) Parent() MyTreeItem {
-	return ti.parent
-}
-
+// FullName is the fully qualified name of the item, including parents.
 func (ti *myTreeItem) FullName() string {
 	if ti == nil {
 		return rootSlash
@@ -54,6 +53,11 @@ func (ti *myTreeItem) FullName() string {
 		return ti.name
 	}
 	return filepath.Join(ti.parent.FullName(), ti.name)
+}
+
+// Parent is the parent of the item.
+func (ti *myTreeItem) Parent() MyTreeItem {
+	return ti.parent
 }
 
 func (ti *myTreeItem) Accept(_ TreeVisitor) {

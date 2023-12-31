@@ -34,7 +34,7 @@ func (fi *MyFile) C() []byte {
 	return fi.content
 }
 
-// Equals just checks names for now.
+// Equals checks for file equality
 func (fi *MyFile) Equals(other *MyFile) bool {
 	if fi == nil {
 		return other == nil

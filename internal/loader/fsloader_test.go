@@ -314,9 +314,9 @@ func TestLoadFolderFromMemoryHappy(t *testing.T) {
 			if !assert.True(t, tc.expectedFld().Equals(fld)) {
 				t.Errorf("Didn't get expected folder.")
 				t.Log("Loaded:")
-				fld.Accept(NewVisitorDump(ldr))
+				fld.Accept(NewVisitorDump())
 				t.Log("Expected:")
-				tc.expectedFld().Accept(NewVisitorDump(ldr))
+				tc.expectedFld().Accept(NewVisitorDump())
 			}
 		})
 	}
@@ -369,7 +369,7 @@ func TestLoadTree(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tc.topName, f.Name())
-			f.Accept(NewVisitorDump(fsl))
+			f.Accept(NewVisitorDump())
 		})
 	}
 }
@@ -417,7 +417,7 @@ func TestLoadTreeFromRepo(t *testing.T) {
 			fsl := NewFsLoader(afero.NewOsFs())
 			f, err := fsl.LoadTree(tc.arg)
 			assert.NoError(t, err)
-			f.Accept(NewVisitorDump(fsl))
+			f.Accept(NewVisitorDump())
 			assert.Equal(t, tc.topName, f.Name())
 		})
 	}

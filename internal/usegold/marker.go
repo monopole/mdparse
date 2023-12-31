@@ -2,7 +2,7 @@ package usegold
 
 import (
 	"github.com/monopole/mdparse/internal/ifc"
-	"github.com/monopole/mdparse/internal/usegold/model"
+	"github.com/monopole/mdparse/internal/usegold/accum"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -31,16 +31,17 @@ func NewMarker(doMyStuff bool) ifc.Marker {
 	return &marker{doMyStuff: doMyStuff, p: markdown, acc: &accum.DocAccumulator{}}
 }
 
-//func (gm *marker) Load(f *loader.MyContrivedFolder) error {
-//	panic(`the folder is ready, but need code that uses it
-//converts files to tutorials and what not.  or something.
-//
-//	 doc := gm.p.Parser().Parse(text.NewReader(rawData))
-//`)
-//	// doc.Meta()["footnote-prefix"] = getPrefix(path)
-//	// gm.acc.Accumulate(doc, rawData)
-//	return nil
-//}
+func (gm *marker) Load(rawData []byte) error {
+	//doc := gm.p.Parser().Parse(text.NewReader(rawData))
+
+	ld, err := accum.NewLessonDocFromBytes(gm.p.Parser(), rawData)
+	if err != nil {
+		return err
+	}
+	// doc.Meta()["footnote-prefix"] = getPrefix(path)
+	gm.acc.Accumulate(ld)
+	return nil
+}
 
 func (gm *marker) Dump() {
 	gm.acc.Dump()

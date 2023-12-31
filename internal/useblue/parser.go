@@ -18,14 +18,14 @@ type gomark struct {
 	doc       ast.Node
 }
 
-//func (gm *gomark) Load(f *loader.MyContrivedFolder) error {
-//	panic("TODO: get this to wprk")
-//	gm.doc = gm.p.Parse(nil)
-//
-//	myWalk(gm.doc)
-//	//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
-//	return nil
-//}
+func (gm *gomark) Load(_ []byte) error {
+	panic("TODO: get this to wprk")
+	gm.doc = gm.p.Parse(nil)
+
+	myWalk(gm.doc)
+	//	_, err = fmt.Printf("--- Markdown:\n%s\n\n", md)
+	return nil
+}
 
 func (gm *gomark) Render() (string, error) {
 	opts := html.RendererOptions{

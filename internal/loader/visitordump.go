@@ -8,13 +8,11 @@ import (
 
 type VisitorDump struct {
 	indent int
-	fsl    *FsLoader
 }
 
-func NewVisitorDump(fsl *FsLoader) *VisitorDump {
+func NewVisitorDump() *VisitorDump {
 	return &VisitorDump{
 		indent: 0,
-		fsl:    fsl,
 	}
 }
 
