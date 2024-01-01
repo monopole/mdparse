@@ -6,33 +6,37 @@ Some text before a code block.
 
 <!-- @one  @two  @three -->
 ```
-a := one
+echo alpha
+which cat
 ```
 
 The comments between the code blocks.
 
 ```bash
-c := two
+echo beta
+which find
 ```
 
 whatever
 
 <!-- @four    @five    @six -->
-```go
-c := three
+```bash
+echo gamma
+which ls
 ```
 
 hoserface
 
 <!--  -->
 ```
-c := four
+echo delta
+which tar
 ```
 
 <!-- @blimp -->
 ```
-c := five
-d := six
+echo epsilon
+which time
 ```
 
 Some text after the code block.

@@ -4,16 +4,18 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/monopole/mdparse/internal/loader"
+	"github.com/monopole/mdrip/base"
+	"github.com/monopole/shexec"
+	"github.com/monopole/shexec/channeler"
 	"github.com/spf13/afero"
 	"os"
+	"time"
 
-	"github.com/monopole/mdparse/internal/ifc"
-	"github.com/monopole/mdparse/internal/useblue"
 	"github.com/monopole/mdparse/internal/usegold"
 	"github.com/spf13/cobra"
 )
 
-//go:embed internal/usegold/accum/testdata/small.md
+//go:embed internal/testdata/small.md
 var mds string
 
 const (
@@ -56,8 +58,8 @@ func newCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			usegold.NewVisitorDump2().VisitFolder(fld)
-			var m ifc.Marker
+			loader.NewVisitorDump().VisitFolder(fld)
+			var blocks []*loader.CodeBlock
 			if useGoldmark := true; useGoldmark {
 				// https://github.com/yuin/goldmark
 				// GOOD:
@@ -73,7 +75,10 @@ func newCommand() *cobra.Command {
 				//   - There are some PRs being ignored by the maintainer.
 				//   - It doesn't yet support block level attributes, but is thinking about it
 				//
-				m = usegold.NewMarker(doMyStuff)
+				ba := usegold.NewBlockAccumulator()
+				ba.VisitFolder(fld)
+				blocks = ba.Blocks(base.WildCardLabel)
+
 			} else {
 				// https://github.com/gomarkdown/markdown/graphs/contributors
 				// GOOD:
@@ -90,20 +95,36 @@ func newCommand() *cobra.Command {
 				//     don't seen an extension.
 				//   - The number of contributors is unclear, since it is a fork of blackfriday.
 				//   - It has zero official releases.
-				m = useblue.NewMarker(doMyStuff)
+				//m = useblue.NewMarker(doMyStuff)
 			}
-			// try:   go run . internal/loader/README.md
-			if err = m.Load([]byte(mds)); err != nil {
-				return
+			for i, b := range blocks {
+				fmt.Printf("# BLOCK%3d ---------------------\n", i)
+				b.Dump()
 			}
-			m.Dump()
-			var s string
-			s, err = m.Render()
-			if err != nil {
-				return
+			const unlikelyWord = "rumplestilskin"
+			sh := shexec.NewShell(shexec.Parameters{
+				Params: channeler.Params{Path: "/bin/bash"},
+				SentinelOut: shexec.Sentinel{
+					C: "echo " + unlikelyWord,
+					V: unlikelyWord,
+				},
+				SentinelErr: shexec.Sentinel{
+					C: unlikelyWord,
+					V: `unrecognized command: "` + unlikelyWord + `"`,
+				},
+			})
+			if err = sh.Start(6 * time.Second); err != nil {
+				return err
 			}
-			if printIt := false; printIt {
-				fmt.Println(s)
+			for i := range blocks {
+				fmt.Printf("******** running command %d\n", i)
+				c := &shexec.PassThruCommander{C: blocks[i].Code()}
+				if err = sh.Run(3*time.Second, c); err != nil {
+					fmt.Printf("**************** got an error: %v\n", err.Error())
+				}
+			}
+			if err = sh.Stop(3*time.Second, ""); err != nil {
+				return err
 			}
 			return
 		},

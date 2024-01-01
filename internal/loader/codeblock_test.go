@@ -1,4 +1,4 @@
-package accum
+package loader
 
 import (
 	"github.com/monopole/mdrip/base"
@@ -14,7 +14,6 @@ func Test_codeBlock_HasLabel(t *testing.T) {
 		"t1": {
 			cb: CodeBlock{
 				labels: nil,
-				fcb:    nil,
 			},
 			label: "sss",
 			want:  false,
@@ -22,7 +21,6 @@ func Test_codeBlock_HasLabel(t *testing.T) {
 		"t2": {
 			cb: CodeBlock{
 				labels: []base.Label{"protein", base.SleepLabel},
-				fcb:    nil,
 			},
 			label: "protein",
 			want:  true,
@@ -30,7 +28,6 @@ func Test_codeBlock_HasLabel(t *testing.T) {
 		"t3": {
 			cb: CodeBlock{
 				labels: []base.Label{base.WildCardLabel, base.SleepLabel},
-				fcb:    nil,
 			},
 			label: base.WildCardLabel,
 			want:  true,

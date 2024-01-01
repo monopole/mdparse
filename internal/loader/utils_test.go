@@ -2,8 +2,10 @@ package loader_test
 
 import (
 	. "github.com/monopole/mdparse/internal/loader"
+	"github.com/monopole/mdrip/base"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -141,6 +143,72 @@ func TestDirBase(t *testing.T) {
 			}
 			assert.Equal(t, tc.r1.dir, dir)
 			assert.Equal(t, tc.r1.base, base)
+		})
+	}
+}
+
+func TestCommentBody(t *testing.T) {
+	tests := map[string]struct {
+		data string
+		want string
+	}{
+		"t1": {
+			data: "<!--hello-->\n",
+			want: "hello",
+		},
+		"t2": {
+			data: "<!-- hello -->",
+			want: " hello ",
+		},
+		"t3": {
+			data: "<!- hello -->",
+			want: "",
+		},
+		"t4": {
+			data: "<!-- hello ->",
+			want: "",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := CommentBody(tc.data); got != tc.want {
+				t.Errorf("got = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseLabels(t *testing.T) {
+	tests := map[string]struct {
+		data string
+		want []base.Label
+	}{
+		"t1": {
+			data: "",
+			want: nil,
+		},
+		"t2": {
+			data: "    ",
+			want: nil,
+		},
+		"t3": {
+			data: "   aaa ",
+			want: nil,
+		},
+		"t4": {
+			data: "  @aa @b     @ccc ",
+			want: []base.Label{"aa", "b", "ccc"},
+		},
+		"t5": {
+			data: "  @aa @b  @   @@ccc @@@ @@@d ",
+			want: []base.Label{"aa", "b", "ccc", "d"},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := ParseLabels(tc.data); !slices.Equal(got, tc.want) {
+				t.Errorf("got = %v, want %v", got, tc.want)
+			}
 		})
 	}
 }

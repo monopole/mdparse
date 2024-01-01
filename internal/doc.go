@@ -1,4 +1,4 @@
-package accum
+package internal
 
 // Package accum has types used to build a tutorial from discovered markdown.
 //

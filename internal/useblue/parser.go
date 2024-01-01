@@ -6,7 +6,6 @@ import (
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
-	"github.com/monopole/mdparse/internal/ifc"
 	"io"
 	"os"
 	"strings"
@@ -42,7 +41,7 @@ func (gm *gomark) Dump() {
 	ast.PrintWithPrefix(os.Stdout, gm.doc, "  ")
 }
 
-func NewMarker(doMyStuff bool) ifc.Marker {
+func NewMarker(doMyStuff bool) *gomark {
 	p := parser.NewWithExtensions(parser.CommonExtensions |
 		parser.AutoHeadingIDs |
 		parser.NoEmptyLineBeforeBlock |
