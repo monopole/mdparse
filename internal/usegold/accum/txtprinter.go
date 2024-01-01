@@ -65,10 +65,3 @@ func (v *TxtPrinter) VisitCourse(c *Course) {
 	}
 	v.Up()
 }
-
-// VisitTopCourse prints the children of a TopCourse.
-func (v *TxtPrinter) VisitTopCourse(t *TopCourse) {
-	for _, x := range t.Children() {
-		x.Accept(v)
-	}
-}

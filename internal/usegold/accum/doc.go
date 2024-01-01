@@ -8,13 +8,13 @@ package accum
 // Example: tutorial on Benelux.
 //
 // The first lesson could be an overview of Benelux, with sibling (not child)
-// courses covering Belgium, Netherlands, and Luxembourg - as one would begin
+// courses detailing Belgium, Netherlands, and Luxembourg - as one would begin
 // a textbook with an introduction.
 //
 // Said courses may hold lessons on provinces, or sub-courses regional
 // histories, cities etc.  A user could drop in anywhere, but content should
 // be arranged such that a depth-first traversal of the hierarchy is a
-// meaningful path through all content - i.e. one ought to be able to read
+// meaningful path through all content. One ought to be able to read
 // it as a book.
 //
 // Associated content REST addresses reflect file system hierarchy, e.g.

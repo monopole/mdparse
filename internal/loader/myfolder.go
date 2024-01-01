@@ -2,15 +2,15 @@ package loader
 
 // MyFolder is a named group of files and folders.
 type MyFolder struct {
-	myTreeItem
+	myTreeNode
 	files []*MyFile
 	dirs  []*MyFolder
 }
 
-var _ MyTreeItem = &MyFolder{}
+var _ MyTreeNode = &MyFolder{}
 
 func NewFolder(n string) *MyFolder {
-	return &MyFolder{myTreeItem: myTreeItem{name: n}}
+	return &MyFolder{myTreeNode: myTreeNode{name: n}}
 }
 
 func (fl *MyFolder) Accept(v TreeVisitor) {

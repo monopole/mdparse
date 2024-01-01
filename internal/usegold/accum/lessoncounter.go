@@ -30,10 +30,3 @@ func (v *LessonCounter) VisitCourse(c *Course) {
 		x.Accept(v)
 	}
 }
-
-// VisitTopCourse visits children.
-func (v *LessonCounter) VisitTopCourse(t *TopCourse) {
-	for _, x := range t.Children() {
-		x.Accept(v)
-	}
-}

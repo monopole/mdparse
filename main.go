@@ -51,18 +51,12 @@ func newCommand() *cobra.Command {
 		Long:    shortHelp + " " + version,
 		Example: "  mdparse some/directory",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			if len(args) > 1 {
-				return fmt.Errorf("specify only one path or repo")
-			}
-			arg := ""
-			if len(args) == 1 {
-				arg = args[0]
-			}
-			ldr := loader.NewFsLoader(afero.NewOsFs())
-			_, err = ldr.LoadFolder(arg)
+			var fld *loader.MyFolder
+			fld, err = loadData(args)
 			if err != nil {
 				return err
 			}
+			usegold.NewVisitorDump2().VisitFolder(fld)
 			var m ifc.Marker
 			if useGoldmark := true; useGoldmark {
 				// https://github.com/yuin/goldmark
@@ -116,4 +110,25 @@ func newCommand() *cobra.Command {
 
 		SilenceUsage: true,
 	}
+}
+
+func loadData(args []string) (*loader.MyFolder, error) {
+	ldr := loader.NewFsLoader(afero.NewOsFs())
+	if len(args) < 2 {
+		arg := "." // By default, read the current directory.
+		if len(args) == 1 {
+			arg = args[0]
+		}
+		return ldr.LoadTree(arg)
+	}
+	// Make one folder to hold all the argument folders.
+	wrapper := loader.NewFolder("multiArgWrapper")
+	for i := range args {
+		fld, err := ldr.LoadTree(args[i])
+		if err != nil {
+			return nil, err
+		}
+		wrapper.AddFolderObject(fld)
+	}
+	return wrapper, nil
 }

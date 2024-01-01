@@ -2,11 +2,11 @@ package loader
 
 // MyFile is named byte array.
 type MyFile struct {
-	myTreeItem
+	myTreeNode
 	content []byte
 }
 
-var _ MyTreeItem = &MyFile{}
+var _ MyTreeNode = &MyFile{}
 
 func NewEmptyFile(n string) *MyFile {
 	return NewFile(n, nil)
@@ -14,7 +14,7 @@ func NewEmptyFile(n string) *MyFile {
 
 func NewFile(n string, c []byte) *MyFile {
 	return &MyFile{
-		myTreeItem: myTreeItem{name: n},
+		myTreeNode: myTreeNode{name: n},
 		content:    c,
 	}
 }

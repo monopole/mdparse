@@ -15,7 +15,6 @@ type Tutorial interface {
 
 // TutVisitor has the ability to visit the items specified in its methods.
 type TutVisitor interface {
-	VisitTopCourse(*TopCourse)
 	VisitCourse(*Course)
 	VisitLessonDoc(*LessonDoc)
 	VisitCodeBlock(*CodeBlock)

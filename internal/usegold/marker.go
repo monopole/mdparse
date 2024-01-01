@@ -12,8 +12,8 @@ import (
 type marker struct {
 	doMyStuff bool
 	p         goldmark.Markdown
-	acc       *accum.DocAccumulator
 	depth     int
+	doc       *accum.LessonDoc
 }
 
 func NewMarker(doMyStuff bool) ifc.Marker {
@@ -28,25 +28,25 @@ func NewMarker(doMyStuff bool) ifc.Marker {
 			html.WithUnsafe(),
 		),
 	)
-	return &marker{doMyStuff: doMyStuff, p: markdown, acc: &accum.DocAccumulator{}}
+	return &marker{doMyStuff: doMyStuff, p: markdown}
 }
 
 func (gm *marker) Load(rawData []byte) error {
-	//doc := gm.p.Parser().Parse(text.NewReader(rawData))
-
-	ld, err := accum.NewLessonDocFromBytes(gm.p.Parser(), rawData)
+	//gm.doc = gm.p.Parser().Parse(text.NewReader(rawData))
+	var err error
+	gm.doc, err = accum.NewLessonDocFromBytes(gm.p.Parser(), rawData)
 	if err != nil {
 		return err
 	}
 	// doc.Meta()["footnote-prefix"] = getPrefix(path)
-	gm.acc.Accumulate(ld)
+	//gm.acc.Accumulate(ld)
 	return nil
 }
 
 func (gm *marker) Dump() {
-	gm.acc.Dump()
+	gm.doc.Dump()
 }
 
 func (gm *marker) Render() (string, error) {
-	return gm.acc.Render(gm.p.Renderer())
+	return gm.doc.Render(gm.p.Renderer())
 }
