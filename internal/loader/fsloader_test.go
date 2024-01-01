@@ -405,10 +405,14 @@ func TestLoadTreeFromRepo(t *testing.T) {
 		},
 		"gh2": {
 			arg:     "git@github.com:monopole/mdrip.git/README.md",
-			topName: "git@github.com:monopole/mdrip/README.md",
+			topName: "git@github.com:monopole/mdrip",
 		},
 		"gh3": {
 			arg:     "git@github.com:monopole/mdrip.git/data",
+			topName: "git@github.com:monopole/mdrip/data",
+		},
+		"gh4": {
+			arg:     "git@github.com:monopole/mdrip.git/data/bad.md",
 			topName: "git@github.com:monopole/mdrip/data",
 		},
 	} {

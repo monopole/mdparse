@@ -25,7 +25,7 @@ func smellsLikeGithubCloneArg(arg string) bool {
 // The FsLoader should be injected with a real file system,
 // since the git command line used here clones to real disk.
 func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyFolder, error) {
-	d, n := splitDomainAndRepo(arg)
+	d, n := splitDomainAndRemainder(arg)
 	r, p, err := splitRepoAndPath(n)
 	if err != nil {
 		return nil, err
@@ -35,17 +35,24 @@ func CloneAndLoadRepo(fsl *FsLoader, arg string) (*MyFolder, error) {
 		fld    *MyFolder
 	)
 	tmpDir, err = cloneRepo(d, r)
+	defer os.RemoveAll(tmpDir)
 	if err != nil {
 		return nil, err
 	}
 	fld, err = fsl.LoadFolder(filepath.Join(tmpDir, p))
+	if err != nil {
+		return nil, err
+	}
+	if fld.NumFiles() == 1 && fld.NumFolders() == 0 {
+		p = strings.TrimSuffix(p, fld.files[0].name)
+		p = strings.TrimSuffix(p, rootSlash)
+	}
 	if p == "" {
 		fld.name = d + r
-	} else {
-		fld.name = d + r + rootSlash + p
+		return fld, nil
 	}
-	_ = os.RemoveAll(tmpDir)
-	return fld, err
+	fld.name = d + r + rootSlash + p
+	return fld, nil
 }
 
 // splitRepoAndPath parses strings like monopole/mdrip.git/somepath or
@@ -78,7 +85,7 @@ func splitRepoAndPath(n string) (string, string, error) {
 	return n[:j], n[j+1:], nil
 }
 
-func splitDomainAndRepo(raw string) (string, string) {
+func splitDomainAndRemainder(raw string) (string, string) {
 	n := strings.ToLower(raw)
 	{
 		p := "gh:"

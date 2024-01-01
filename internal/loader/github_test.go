@@ -37,7 +37,7 @@ func TestSplitDomainAndRepo(t *testing.T) {
 		},
 	} {
 		t.Run(tc.spec, func(t *testing.T) {
-			d, r := splitDomainAndRepo(tc.spec)
+			d, r := splitDomainAndRemainder(tc.spec)
 			if d != tc.domain || r != "REPO" {
 				t.Errorf("\n"+
 					"    spec %q\n"+

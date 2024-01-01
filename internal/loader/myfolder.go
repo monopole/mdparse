@@ -23,6 +23,20 @@ func (fl *MyFolder) AddFileObject(file *MyFile) *MyFolder {
 	return fl
 }
 
+func (fl *MyFolder) NumFiles() int {
+	if fl == nil {
+		return 0
+	}
+	return len(fl.files)
+}
+
+func (fl *MyFolder) NumFolders() int {
+	if fl == nil {
+		return 0
+	}
+	return len(fl.dirs)
+}
+
 func (fl *MyFolder) AddFolderObject(folder *MyFolder) *MyFolder {
 	folder.parent = fl
 	fl.dirs = append(fl.dirs, folder)
