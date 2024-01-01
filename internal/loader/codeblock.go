@@ -45,6 +45,9 @@ func (cb *CodeBlock) Dump() {
 
 // HasLabel is true if the block has the given label argument.
 func (cb *CodeBlock) HasLabel(label base.Label) bool {
+	if label == base.WildCardLabel {
+		return true
+	}
 	for _, l := range cb.labels {
 		if l == label {
 			return true

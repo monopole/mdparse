@@ -15,6 +15,7 @@ require (
 replace (
 	github.com/gomarkdown/markdown => ../../gomarkdown/markdown
 	github.com/monopole/mdrip => ../mdrip
+	github.com/monopole/shexec => ../shexec
 	github.com/yuin/goldmark => ../../yuin/goldmark
 )
 

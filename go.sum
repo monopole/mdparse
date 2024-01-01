@@ -9,8 +9,6 @@ github.com/gorilla/sessions v0.0.0-20160922145804-ca9ada445741/go.mod h1:+WVp8kd
 github.com/gorilla/websocket v1.2.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/monopole/shexec v0.1.8 h1:aVvWKvXGAqegodwmdYjXOVqiWSXBhUm7q1/afwOmC30=
-github.com/monopole/shexec v0.1.8/go.mod h1:rMTnss8p5pKuC+0oDVFgemCSZjfuKyUZMVu4UhR1bRc=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

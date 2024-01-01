@@ -7,14 +7,14 @@ Some text before a code block.
 <!-- @one  @two  @three -->
 ```
 echo alpha
-which cat
+which find
 ```
 
 The comments between the code blocks.
 
 ```bash
 echo beta
-which find
+which cat
 ```
 
 whatever

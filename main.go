@@ -108,12 +108,12 @@ func newCommand() *cobra.Command {
 					C: "echo " + unlikelyWord,
 					V: unlikelyWord,
 				},
-				SentinelErr: shexec.Sentinel{
-					C: unlikelyWord,
-					V: `unrecognized command: "` + unlikelyWord + `"`,
-				},
+				//SentinelErr: shexec.Sentinel{
+				//	C: unlikelyWord,
+				//	V: `unrecognized command: "` + unlikelyWord + `"`,
+				//},
 			})
-			if err = sh.Start(6 * time.Second); err != nil {
+			if err = sh.Start(10 * time.Second); err != nil {
 				return err
 			}
 			for i := range blocks {
@@ -126,6 +126,7 @@ func newCommand() *cobra.Command {
 			if err = sh.Stop(3*time.Second, ""); err != nil {
 				return err
 			}
+			fmt.Println("All done.")
 			return
 		},
 
