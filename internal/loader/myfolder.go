@@ -23,6 +23,18 @@ func (fl *MyFolder) AddFileObject(file *MyFile) *MyFolder {
 	return fl
 }
 
+func (fl *MyFolder) VisitFiles(v TreeVisitor) {
+	for i := range fl.files {
+		v.VisitFile(fl.files[i])
+	}
+}
+
+func (fl *MyFolder) VisitFolders(v TreeVisitor) {
+	for i := range fl.dirs {
+		v.VisitFolder(fl.dirs[i])
+	}
+}
+
 func (fl *MyFolder) NumFiles() int {
 	if fl == nil {
 		return 0

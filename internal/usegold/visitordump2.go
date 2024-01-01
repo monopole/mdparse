@@ -1,28 +1,29 @@
-package loader
+package usegold
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/monopole/mdparse/internal/loader"
 	"unicode"
 )
 
-type VisitorDump struct {
+type VisitorDump2 struct {
 	indent int
 }
 
-func NewVisitorDump() *VisitorDump {
-	return &VisitorDump{
+func NewVisitorDump2() *VisitorDump2 {
+	return &VisitorDump2{
 		indent: 0,
 	}
 }
 
 const blanks = "                                                                "
 
-func (v *VisitorDump) VisitFolder(fl *MyFolder) {
+func (v *VisitorDump2) VisitFolder(fl *loader.MyFolder) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Print(fl.Name())
 	if !fl.IsRoot() {
-		fmt.Print(rootSlash)
+		fmt.Print("/")
 	}
 	fmt.Println()
 	v.indent += 2
@@ -31,7 +32,7 @@ func (v *VisitorDump) VisitFolder(fl *MyFolder) {
 	v.indent -= 2
 }
 
-func (v *VisitorDump) VisitFile(fi *MyFile) {
+func (v *VisitorDump2) VisitFile(fi *loader.MyFile) {
 	fmt.Print(blanks[:v.indent])
 	fmt.Print(fi.Name())
 	fmt.Print(" : ")

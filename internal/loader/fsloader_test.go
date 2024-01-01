@@ -10,6 +10,22 @@ import (
 	"testing"
 )
 
+var debugging = false
+
+func turnOnDebugging() {
+	debugging = true
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: false,
+		Level:     slog.LevelDebug,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey || a.Key == slog.LevelKey {
+				a.Value = slog.StringValue("")
+			}
+			return a
+		},
+	})))
+}
+
 // Permission bits
 //
 //	The file or folder's owner:
@@ -368,23 +384,12 @@ func TestLoadTree(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
+			if debugging {
+				f.Accept(NewVisitorDump())
+			}
 			assert.Equal(t, tc.topName, f.Name())
-			f.Accept(NewVisitorDump())
 		})
 	}
-}
-
-func turnOnDebugging() {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		AddSource: false,
-		Level:     slog.LevelDebug,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey || a.Key == slog.LevelKey {
-				a.Value = slog.StringValue("")
-			}
-			return a
-		},
-	})))
 }
 
 const runRealGitHubTests = false
@@ -421,7 +426,9 @@ func TestLoadTreeFromRepo(t *testing.T) {
 			fsl := NewFsLoader(afero.NewOsFs())
 			f, err := fsl.LoadTree(tc.arg)
 			assert.NoError(t, err)
-			f.Accept(NewVisitorDump())
+			if debugging {
+				f.Accept(NewVisitorDump())
+			}
 			assert.Equal(t, tc.topName, f.Name())
 		})
 	}
